@@ -3,7 +3,9 @@
 // ========================================
 
 window.AppState = {
-    API_BASE: '',
+    // API base URL - use relative path for same-origin requests
+    // Change to full URL if API is on different domain/port
+    API_BASE: window.location.origin, // This will be http://localhost:8000 or your domain
     MIN_CONTEXT_CHARS: 50,
     VIDEO_FORMATS: ['.mp4', '.mov', '.avi', '.mkv', '.webm'],
     AUDIO_FORMATS: ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.aac', '.wma', '.opus'],

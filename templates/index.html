@@ -516,6 +516,63 @@
     </div>
 
     <!-- Modular JavaScript -->
+    <!-- Global error handler to suppress non-critical browser extension errors -->
+    <script>
+        // Suppress errors from browser extensions that intercept fetch requests
+        const originalAddEventListener = window.addEventListener;
+        window.addEventListener = function(type, listener, options) {
+            if (type === 'error' || type === 'unhandledrejection') {
+                const wrappedListener = function(event) {
+                    const message = event.message || '';
+                    const reason = event.reason?.message || event.reason || '';
+                    const errorStr = String(message || reason).toLowerCase();
+                    
+                    if (errorStr.includes('message channel closed') || 
+                        errorStr.includes('asynchronous response') ||
+                        errorStr.includes('listener indicated')) {
+                        // Suppress non-critical extension errors
+                        console.debug('Suppressed browser extension error:', message || reason);
+                        event.preventDefault();
+                        event.stopPropagation();
+                        event.stopImmediatePropagation();
+                        return false;
+                    }
+                    
+                    // Call original listener for other errors
+                    if (listener && typeof listener === 'function') {
+                        return listener.apply(this, arguments);
+                    }
+                };
+                return originalAddEventListener.call(this, type, wrappedListener, options);
+            }
+            return originalAddEventListener.apply(this, arguments);
+        };
+        
+        // Also add direct handlers as fallback
+        window.addEventListener('error', function(event) {
+            const message = (event.message || '').toLowerCase();
+            if (message.includes('message channel closed') || 
+                message.includes('asynchronous response') ||
+                message.includes('listener indicated')) {
+                console.debug('Suppressed extension error (direct handler)');
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }, true);
+        
+        window.addEventListener('unhandledrejection', function(event) {
+            const reason = event.reason?.message || event.reason || '';
+            const reasonStr = String(reason).toLowerCase();
+            if (reasonStr.includes('message channel closed') || 
+                reasonStr.includes('asynchronous response') ||
+                reasonStr.includes('listener indicated')) {
+                console.debug('Suppressed extension promise rejection (direct handler)');
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
     <script src="/static/js/state.js?v=3"></script>
     <script src="/static/js/utils.js?v=3"></script>
     <script src="/static/js/api.js?v=3"></script>

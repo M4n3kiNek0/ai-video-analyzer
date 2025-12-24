@@ -121,7 +121,7 @@ export default function VideoDetailPage({ params }: { params: Promise<{ id: stri
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="hidden md:flex"
+                                className="hidden md:flex items-center gap-2 bg-blue-600 text-white border-blue-500 hover:bg-blue-700"
                                 onClick={async () => {
                                     try {
                                         const response = await fetch(`/api/videos/${video.id}/export/pdf`);
@@ -140,12 +140,12 @@ export default function VideoDetailPage({ params }: { params: Promise<{ id: stri
                                     }
                                 }}
                             >
-                                <Download className="w-4 h-4 mr-2" /> PDF
-                            </Button>
+                                <Download className="w-4 h-4" /> PDF
+                                </Button>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="hidden md:flex"
+                                className="hidden md:flex items-center gap-2 bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700"
                                 onClick={async () => {
                                     try {
                                         const response = await fetch(`/api/videos/${video.id}/export/zip`);
@@ -164,7 +164,7 @@ export default function VideoDetailPage({ params }: { params: Promise<{ id: stri
                                     }
                                 }}
                             >
-                                <Download className="w-4 h-4 mr-2" /> ZIP
+                                <Download className="w-4 h-4" /> ZIP
                             </Button>
                         </>
                     )}
@@ -220,14 +220,14 @@ export default function VideoDetailPage({ params }: { params: Promise<{ id: stri
                     <Tabs defaultValue="transcript" className="flex-1 flex flex-col min-h-0 overflow-hidden">
                         <div className="p-3 border-b border-white/5 flex-shrink-0">
                             <TabsList className="w-full grid grid-cols-3">
-                                <TabsTrigger value="transcript" className="text-xs">
-                                    <FileText className="w-4 h-4 mr-2" /> Transcript
+                                <TabsTrigger value="transcript" className="text-xs text-zinc-300 data-[state=active]:text-white">
+                                    <FileText className="w-4 h-4 mr-2 text-current" /> Transcript
                                 </TabsTrigger>
-                                <TabsTrigger value="analysis" className="text-xs">
-                                    <Sparkles className="w-4 h-4 mr-2" /> Analysis
+                                <TabsTrigger value="analysis" className="text-xs text-zinc-300 data-[state=active]:text-white">
+                                    <Sparkles className="w-4 h-4 mr-2 text-current" /> Analysis
                                 </TabsTrigger>
-                                <TabsTrigger value="logs" className="text-xs">
-                                    <Terminal className="w-4 h-4 mr-2" /> Logs
+                                <TabsTrigger value="logs" className="text-xs text-zinc-300 data-[state=active]:text-white">
+                                    <Terminal className="w-4 h-4 mr-2 text-current" /> Log
                                 </TabsTrigger>
                             </TabsList>
                         </div>

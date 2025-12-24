@@ -559,9 +559,23 @@ window.Upload = {
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
         
+        // Show processing container immediately (with terminal) for upload progress
+        if (processingContainer) {
+            processingContainer.style.display = 'grid';
+            // Hide processing steps initially, show only terminal
+            const videoSteps = document.getElementById('videoProcessingSteps');
+            const audioSteps = document.getElementById('audioProcessingSteps');
+            const processingTitle = document.getElementById('processingTitle');
+            if (videoSteps) videoSteps.style.display = 'none';
+            if (audioSteps) audioSteps.style.display = 'none';
+            if (processingTitle) processingTitle.textContent = 'Caricamento in corso...';
+        }
+        
         // Initialize terminal log
         TerminalLog.init();
-        TerminalLog.info(`Uploading ${AppState.selectedFile.name} (${Utils.formatFileSize(AppState.selectedFile.size)})...`);
+        TerminalLog.system('=== UPLOAD PROCESS STARTED ===');
+        TerminalLog.info(`File: ${AppState.selectedFile.name}`);
+        TerminalLog.info(`Size: ${Utils.formatFileSize(AppState.selectedFile.size)}`);
         
         try {
             let result;
@@ -571,16 +585,74 @@ window.Upload = {
             TerminalLog.system(`Analysis type: ${analysisType}`);
             TerminalLog.system(`Media type: ${AppState.currentMediaType}`);
             
+            // Track upload progress
+            let lastProgressUpdate = 0;
+            let progressEntryElement = null;
+            const progressCallback = (progress) => {
+                const now = Date.now();
+                // Update terminal every 500ms to avoid spam
+                if (now - lastProgressUpdate > 500) {
+                    const percent = Math.round(progress.percent);
+                    const speedMBps = (progress.speed / (1024 * 1024)).toFixed(2);
+                    const uploadedMB = (progress.loaded / (1024 * 1024)).toFixed(2);
+                    const totalMB = (progress.total / (1024 * 1024)).toFixed(2);
+                    const timeRemaining = progress.timeRemaining > 0 ? 
+                        `${Math.round(progress.timeRemaining)}s` : 'calcolo...';
+                    
+                    const progressMessage = `Upload: ${percent}% (${uploadedMB}MB / ${totalMB}MB) - ${speedMBps} MB/s - ${timeRemaining} rimanenti`;
+                    
+                    // Update progress line (replace previous if exists)
+                    const body = document.getElementById('terminalBody');
+                    if (body && progressEntryElement) {
+                        // Update existing entry
+                        const timeEl = progressEntryElement.querySelector('.log-time');
+                        const timestamp = new Date().toLocaleTimeString('it-IT', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit' 
+                        });
+                        if (timeEl) timeEl.textContent = `[${timestamp}]`;
+                        progressEntryElement.innerHTML = `<span class="log-time">[${timestamp}]</span> ${TerminalLog._escapeHtml(progressMessage)}`;
+                    } else if (body) {
+                        // Create new entry
+                        const timestamp = new Date().toLocaleTimeString('it-IT', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit' 
+                        });
+                        progressEntryElement = document.createElement('div');
+                        progressEntryElement.className = 'log-entry step active upload-progress';
+                        progressEntryElement.innerHTML = `<span class="log-time">[${timestamp}]</span> ${TerminalLog._escapeHtml(progressMessage)}`;
+                        body.appendChild(progressEntryElement);
+                        body.scrollTop = body.scrollHeight;
+                    } else {
+                        // Fallback to normal logging
+                        TerminalLog.step(progressMessage);
+                    }
+                    
+                    lastProgressUpdate = now;
+                }
+            };
+            
+            TerminalLog.step('Starting upload...');
+            
             if (AppState.currentMediaType === 'audio') {
-                result = await Api.uploadAudio(AppState.selectedFile, context, analysisType);
+                result = await Api.uploadAudio(AppState.selectedFile, context, analysisType, progressCallback);
                 AppState.currentVideoId = result.audio_id;
             } else {
-                result = await Api.uploadVideo(AppState.selectedFile, context, analysisType);
+                result = await Api.uploadVideo(AppState.selectedFile, context, analysisType, progressCallback);
                 AppState.currentVideoId = result.video_id;
             }
             
-            TerminalLog.success('Upload complete! Starting analysis...');
+            // Clear progress line and remove upload-progress class
+            const body = document.getElementById('terminalBody');
+            if (body && progressEntryElement) {
+                progressEntryElement.classList.remove('upload-progress', 'active');
+            }
+            
+            TerminalLog.success('✓ Upload completato con successo!');
             TerminalLog.info(`Media ID: ${AppState.currentVideoId}`);
+            TerminalLog.system('=== STARTING ANALYSIS ===');
             
             // Hide upload elements
             if (dropZone) dropZone.style.display = 'none';
@@ -588,11 +660,8 @@ window.Upload = {
             if (mediaTypeToggle) mediaTypeToggle.style.display = 'none';
             if (analysisTypeSection) analysisTypeSection.style.display = 'none';
             
-            // Show processing container (split view with terminal)
+            // Show processing steps now that upload is complete
             if (processingContainer) {
-                processingContainer.style.display = 'grid';
-                
-                // Show correct processing steps based on media type
                 const videoSteps = document.getElementById('videoProcessingSteps');
                 const audioSteps = document.getElementById('audioProcessingSteps');
                 const processingTitle = document.getElementById('processingTitle');
@@ -688,6 +757,9 @@ window.Upload = {
             }
         }, 3000);
         
+        // Track last log ID to only show new logs
+        let lastLogId = 0;
+        
         // Poll API for actual status
         AppState.pollingInterval = setInterval(async () => {
             try {
@@ -713,16 +785,20 @@ window.Upload = {
                     return;
                 }
                 
-                const response = await fetch(`${AppState.API_BASE}/videos/${mediaId}`);
+                // Fetch both status and logs
+                const [statusResponse, logsResponse] = await Promise.all([
+                    fetch(`${AppState.API_BASE}/videos/${mediaId}`),
+                    fetch(`${AppState.API_BASE}/videos/${mediaId}/logs`).catch(() => null)
+                ]);
                 
                 // Check if response is ok
-                if (!response.ok) {
-                    console.error('Polling response error:', response.status, response.statusText);
-                    TerminalLog.warning(`API response error: ${response.status}`);
+                if (!statusResponse.ok) {
+                    console.error('Polling response error:', statusResponse.status, statusResponse.statusText);
+                    TerminalLog.warning(`API response error: ${statusResponse.status}`);
                     return;
                 }
                 
-                const data = await response.json();
+                const data = await statusResponse.json();
                 
                 // Validate response structure
                 if (!data || !data.video) {
@@ -730,12 +806,48 @@ window.Upload = {
                     return;
                 }
                 
+                // Process logs if available
+                if (logsResponse && logsResponse.ok) {
+                    try {
+                        const logs = await logsResponse.json();
+                        // Filter new logs (after lastLogId)
+                        const newLogs = logs.filter(log => log.id > lastLogId);
+                        if (newLogs.length > 0) {
+                            newLogs.forEach(log => {
+                                const logLevel = log.level.toLowerCase();
+                                if (logLevel === 'error') {
+                                    TerminalLog.error(log.message);
+                                } else if (logLevel === 'warning') {
+                                    TerminalLog.warning(log.message);
+                                } else if (logLevel === 'success') {
+                                    TerminalLog.success(log.message);
+                                } else {
+                                    TerminalLog.info(log.message);
+                                }
+                            });
+                            lastLogId = Math.max(...newLogs.map(l => l.id));
+                        }
+                    } catch (e) {
+                        // Ignore log parsing errors
+                    }
+                }
+                
                 const status = data.video.status;
+                const videoData = data.video;
                 console.log('Polling status:', status, '- elapsed:', Math.round(elapsedTime / 1000), 's');
                 
-                // Log periodic status updates
-                if (elapsedTime % 15000 < 5000) { // Every ~15 seconds
-                    TerminalLog.system(`Status: ${status} (${elapsedMinutes}m ${elapsedSeconds}s elapsed)`);
+                // Log detailed status updates every 15 seconds (only if no backend logs)
+                if (elapsedTime % 15000 < 2000) { // Every ~15 seconds
+                    let statusInfo = `Status check: ${status} | Tempo trascorso: ${elapsedMinutes}m ${elapsedSeconds}s`;
+                    if (videoData.analysis_progress) {
+                        statusInfo += ` | Progresso: ${videoData.analysis_progress}`;
+                    }
+                    TerminalLog.system(statusInfo);
+                    
+                    // Log any additional info from analysis
+                    if (data.analysis && data.analysis.processing_stage) {
+                        TerminalLog.info(`Stage corrente: ${data.analysis.processing_stage}`);
+                    }
                 }
                 
                 if (status === 'completed') {

@@ -238,6 +238,10 @@ window.lightboxNext = () => Lightbox.next();
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
+    // Log API base for debugging
+    console.log('App initialized. API_BASE:', AppState.API_BASE);
+    console.log('Current origin:', window.location.origin);
+    
     // Initialize Lucide Icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -246,7 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
     Navigation.init();
     MobileMenu.init();
     Upload.init();
-    checkApiStatus();
+    
+    // Initial API health check
+    checkApiStatus().then(() => {
+        console.log('Initial API health check completed');
+    });
     
     // Check API status periodically
     setInterval(checkApiStatus, 30000);

@@ -16,15 +16,23 @@ export default function DashboardPage() {
   const fetchVideos = async () => {
     try {
       setLoading(true);
+      console.log('[Dashboard] Fetching videos from API...');
+      console.log('[Dashboard] API base URL:', api.defaults.baseURL);
+      
       const response = await api.get('/videos');
+      console.log('[Dashboard] API Response:', response.data);
+      
       const data = response.data;
       // Backend returns { videos: [...] } or { items: [...] } or just [...]
       const videosList = data.videos || data.items || (Array.isArray(data) ? data : []);
+      console.log('[Dashboard] Videos list:', videosList);
+      
       setVideos(Array.isArray(videosList) ? videosList : []);
       setError(null);
-    } catch (err) {
-      console.error("Failed to fetch videos:", err);
-      setError("Failed to load videos. Please try again.");
+    } catch (err: any) {
+      console.error("[Dashboard] Failed to fetch videos:", err);
+      console.error("[Dashboard] Error details:", err.response?.status, err.response?.data, err.message);
+      setError(`Failed to load videos: ${err.message || 'Unknown error'}. Is the backend running on port 8000?`);
     } finally {
       setLoading(false);
     }

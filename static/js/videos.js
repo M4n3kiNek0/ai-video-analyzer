@@ -5,18 +5,35 @@
 window.Videos = {
     async loadVideos() {
         const videosList = document.getElementById('videosList');
-        if (!videosList) return;
+        if (!videosList) {
+            console.error('Videos.loadVideos: videosList element not found');
+            return;
+        }
         
         // Show skeleton loading
         this.showSkeletonLoading(videosList, 6);
         
         try {
+            console.log('Loading videos...');
             const data = await Api.getVideos(AppState.currentMediaFilter);
-            this.renderVideosList(data.videos);
+            console.log('Videos API response:', data);
+            
+            // Handle different response formats
+            const videos = data?.videos || data?.items || (Array.isArray(data) ? data : []);
+            
+            if (!Array.isArray(videos)) {
+                console.error('Invalid videos data format:', videos);
+                throw new Error('Formato dati non valido dalla API');
+            }
+            
+            console.log(`Rendering ${videos.length} videos`);
+            this.renderVideosList(videos);
         } catch (error) {
+            console.error('Error loading videos:', error);
             videosList.innerHTML = `
                 <div class="error-message">
                     <p><i data-lucide="alert-circle"></i> Errore nel caricamento dei media</p>
+                    <p class="error-detail">${Utils.escapeHtml(error.message || 'Errore sconosciuto')}</p>
                     <button onclick="Videos.loadVideos()" class="btn btn-secondary retry-btn">
                         <i data-lucide="refresh-cw"></i> Riprova
                     </button>

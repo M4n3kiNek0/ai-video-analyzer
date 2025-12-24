@@ -32,14 +32,19 @@ services:
     build:
       context: ./frontend
     container_name: video_analyzer_frontend
-    command: npm run dev -- -H 0.0.0.0
+    command: sh -c "npm install && npm run dev -- -H 0.0.0.0"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/app:/app/app
+      - ./frontend/components:/app/components
+      - ./frontend/lib:/app/lib
+      - ./frontend/types:/app/types
+      - ./frontend/public:/app/public
+      # node_modules stays in container (not mounted from host)
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - INTERNAL_API_URL=http://web:8000
     depends_on:
       - web
 
