@@ -1,0 +1,200 @@
+[2025-12-16 21:08:51,310: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:08:51,311: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:09:05,993: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:09:05,994: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:09:06,033: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_010.jpg
+[2025-12-16 21:09:06,039: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_021.jpg at 85.98s
+[2025-12-16 21:09:08,310: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:09:08,311: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:09:22,234: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:09:22,237: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:09:22,463: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_011.jpg
+[2025-12-16 21:09:22,471: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_022.jpg at 89.89s
+
+worker: Warm shutdown (MainProcess)
+/usr/local/lib/python3.10/site-packages/celery/platforms.py:841: SecurityWarning: You're running the worker with superuser privileges: this is
+absolutely not recommended!
+
+Please specify a different user using the --uid option.
+
+User information: uid=0 euid=0 gid=0 egid=0
+
+  warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
+ 
+ -------------- celery@2abc59884ec7 v5.6.0 (recovery)
+--- ***** ----- 
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.36 2025-12-16 21:10:01
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         video_analyzer:0x7bb7be6c7c40
+- ** ---------- .> transport:   redis://redis:6379/0
+- ** ---------- .> results:     redis://redis:6379/0
+- *** --- * --- .> concurrency: 14 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . processing_pipeline.process_audio_task
+  . processing_pipeline.process_video_task
+
+[2025-12-16 21:10:03,156: INFO/MainProcess] Connected to redis://redis:6379/0
+[2025-12-16 21:10:03,167: INFO/MainProcess] mingle: searching for neighbors
+[2025-12-16 21:10:04,189: INFO/MainProcess] mingle: all alone
+[2025-12-16 21:10:04,210: INFO/MainProcess] celery@2abc59884ec7 ready.
+[2025-12-16 21:34:23,413: INFO/MainProcess] Task processing_pipeline.process_video_task[e21e3762-d6b3-44f2-9a0b-90f49616395d] received
+[2025-12-16 21:34:23,421: INFO/ForkPoolWorker-8] Task process_video_task[e21e3762-d6b3-44f2-9a0b-90f49616395d] started for video_id=33
+[2025-12-16 21:34:23,421: INFO/ForkPoolWorker-8] Lazy loading AIAnalyzer...
+[2025-12-16 21:34:23,468: INFO/ForkPoolWorker-8] Loaded configuration from database: OpenAI
+[2025-12-16 21:34:23,594: INFO/ForkPoolWorker-8] AIAnalyzer initialized with config: OpenAI
+[2025-12-16 21:34:23,594: INFO/ForkPoolWorker-8] Lazy loading MinIOStorage...
+[2025-12-16 21:34:23,705: INFO/ForkPoolWorker-8] MinIOStorage initialized: endpoint=http://minio:9000, bucket=video-screenshots
+[2025-12-16 21:34:23,723: INFO/ForkPoolWorker-8] Bucket 'video-screenshots' exists
+[2025-12-16 21:34:23,869: INFO/ForkPoolWorker-8] Video loaded: temp_uploads/video_analyzer_icg4xc7n/Tilby - Sala.mp4
+[2025-12-16 21:34:23,869: INFO/ForkPoolWorker-8]   Duration: 117.28s, FPS: 9.456218636187975, Frames: 1109
+[2025-12-16 21:34:23,869: INFO/ForkPoolWorker-8]   Resolution: 1080x2340
+[2025-12-16 21:34:23,880: INFO/ForkPoolWorker-8] [33] Extracting audio...
+[2025-12-16 21:34:27,123: INFO/ForkPoolWorker-8] Audio extracted to: temp_uploads/video_analyzer_icg4xc7n/audio.mp3
+[2025-12-16 21:34:27,124: INFO/ForkPoolWorker-8] [33] Transcribing audio...
+[2025-12-16 21:34:27,124: INFO/ForkPoolWorker-8] Starting transcription: temp_uploads/video_analyzer_icg4xc7n/audio.mp3
+[2025-12-16 21:34:35,332: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+[2025-12-16 21:34:35,336: INFO/ForkPoolWorker-8] [33] Enriching transcription...
+[2025-12-16 21:34:35,336: INFO/ForkPoolWorker-8] Enriching transcription with GPT-4o...
+[2025-12-16 21:34:54,254: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:34:54,264: INFO/ForkPoolWorker-8] Transcription enriched: 4 topics, 5 keywords
+[2025-12-16 21:34:54,280: INFO/ForkPoolWorker-8] [33] Extracting keyframes...
+[2025-12-16 21:34:54,282: INFO/ForkPoolWorker-8] Adaptive extraction: duration=117.3s, target_frames=29
+[2025-12-16 21:34:54,399: INFO/ForkPoolWorker-8] Uniform frame 1 at 3.81s
+[2025-12-16 21:34:54,480: INFO/ForkPoolWorker-8] Uniform frame 2 at 7.72s
+[2025-12-16 21:34:54,589: INFO/ForkPoolWorker-8] Uniform frame 3 at 11.63s
+[2025-12-16 21:34:54,750: INFO/ForkPoolWorker-8] Uniform frame 4 at 15.55s
+[2025-12-16 21:34:54,821: INFO/ForkPoolWorker-8] Uniform frame 5 at 19.46s
+[2025-12-16 21:34:54,909: INFO/ForkPoolWorker-8] Uniform frame 6 at 23.37s
+[2025-12-16 21:34:55,038: INFO/ForkPoolWorker-8] Uniform frame 7 at 27.28s
+[2025-12-16 21:34:55,213: INFO/ForkPoolWorker-8] Uniform frame 8 at 31.20s
+[2025-12-16 21:34:55,409: INFO/ForkPoolWorker-8] Uniform frame 9 at 35.11s
+[2025-12-16 21:34:55,494: INFO/ForkPoolWorker-8] Uniform frame 10 at 39.02s
+[2025-12-16 21:34:55,626: INFO/ForkPoolWorker-8] Uniform frame 11 at 42.93s
+[2025-12-16 21:34:55,784: INFO/ForkPoolWorker-8] Uniform frame 12 at 46.85s
+[2025-12-16 21:34:55,863: INFO/ForkPoolWorker-8] Uniform frame 13 at 50.76s
+[2025-12-16 21:34:55,929: INFO/ForkPoolWorker-8] Uniform frame 14 at 54.67s
+[2025-12-16 21:34:55,980: INFO/ForkPoolWorker-8] Uniform frame 15 at 58.59s
+[2025-12-16 21:34:56,053: INFO/ForkPoolWorker-8] Uniform frame 16 at 62.50s
+[2025-12-16 21:34:56,181: INFO/ForkPoolWorker-8] Uniform frame 17 at 66.41s
+[2025-12-16 21:34:56,297: INFO/ForkPoolWorker-8] Uniform frame 18 at 70.32s
+[2025-12-16 21:34:56,471: INFO/ForkPoolWorker-8] Uniform frame 19 at 74.24s
+[2025-12-16 21:34:56,568: INFO/ForkPoolWorker-8] Uniform frame 20 at 78.15s
+[2025-12-16 21:34:56,660: INFO/ForkPoolWorker-8] Uniform frame 21 at 82.06s
+[2025-12-16 21:34:56,786: INFO/ForkPoolWorker-8] Uniform frame 22 at 85.98s
+[2025-12-16 21:34:56,895: INFO/ForkPoolWorker-8] Uniform frame 23 at 89.89s
+[2025-12-16 21:34:57,063: INFO/ForkPoolWorker-8] Uniform frame 24 at 93.80s
+[2025-12-16 21:34:57,284: INFO/ForkPoolWorker-8] Uniform frame 25 at 97.71s
+[2025-12-16 21:34:57,533: INFO/ForkPoolWorker-8] Uniform frame 26 at 101.63s
+[2025-12-16 21:34:57,646: INFO/ForkPoolWorker-8] Uniform frame 27 at 105.54s
+[2025-12-16 21:34:57,712: INFO/ForkPoolWorker-8] Uniform frame 28 at 109.45s
+[2025-12-16 21:34:57,819: INFO/ForkPoolWorker-8] Uniform frame 29 at 113.36s
+[2025-12-16 21:35:02,776: INFO/ForkPoolWorker-8] Scene change frame at 115.90s (score=20.2%)
+[2025-12-16 21:35:03,039: INFO/ForkPoolWorker-8] Adaptive extraction complete: 30 keyframes
+[2025-12-16 21:35:03,040: INFO/ForkPoolWorker-8] Deduplicating 30 keyframes (threshold=20)...
+[2025-12-16 21:35:03,966: INFO/ForkPoolWorker-8] Deduplication complete: 14 unique frames, 16 duplicates removed
+[2025-12-16 21:35:03,967: INFO/ForkPoolWorker-8] [33] Analyzing 14 keyframes...
+[2025-12-16 21:35:03,967: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_000.jpg at 3.81s
+[2025-12-16 21:35:49,860: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:35:49,862: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:35:49,914: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_000.jpg
+[2025-12-16 21:35:49,925: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_002.jpg at 11.63s
+[2025-12-16 21:35:52,205: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:35:52,206: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:36:08,019: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:36:08,020: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:36:08,060: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_001.jpg
+[2025-12-16 21:36:08,065: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_003.jpg at 15.55s
+[2025-12-16 21:36:57,028: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:36:57,030: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:36:57,067: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_002.jpg
+[2025-12-16 21:36:57,071: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_004.jpg at 19.46s
+[2025-12-16 21:36:59,122: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:36:59,123: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:37:13,068: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:37:13,069: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:37:13,117: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_003.jpg
+[2025-12-16 21:37:13,124: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_005.jpg at 23.37s
+[2025-12-16 21:38:09,015: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:38:09,021: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:38:09,053: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_004.jpg
+[2025-12-16 21:38:09,056: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_008.jpg at 35.11s
+[2025-12-16 21:38:11,554: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:38:11,555: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:38:20,144: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:38:20,145: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:38:20,189: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_005.jpg
+[2025-12-16 21:38:20,194: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_015.jpg at 62.5s
+[2025-12-16 21:39:10,334: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:10,336: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:39:10,373: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_006.jpg
+[2025-12-16 21:39:10,377: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_016.jpg at 66.41s
+[2025-12-16 21:39:12,883: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:12,884: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:39:22,794: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:22,795: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:39:22,833: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_007.jpg
+[2025-12-16 21:39:22,836: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_017.jpg at 70.32s
+[2025-12-16 21:39:25,505: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:25,506: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:39:41,377: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:41,393: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:39:41,440: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_008.jpg
+[2025-12-16 21:39:41,444: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_019.jpg at 78.15s
+[2025-12-16 21:39:43,803: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:43,805: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:39:51,938: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:51,939: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:39:51,982: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_009.jpg
+[2025-12-16 21:39:51,986: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_020.jpg at 82.06s
+[2025-12-16 21:39:54,523: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:39:54,524: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:40:05,707: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:05,708: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:40:05,747: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_010.jpg
+[2025-12-16 21:40:05,751: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_021.jpg at 85.98s
+[2025-12-16 21:40:09,007: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:09,008: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:40:22,818: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:22,819: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:40:22,866: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_011.jpg
+[2025-12-16 21:40:22,871: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_022.jpg at 89.89s
+[2025-12-16 21:40:24,682: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:24,683: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:40:37,927: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:37,928: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:40:37,965: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_012.jpg
+[2025-12-16 21:40:37,969: INFO/ForkPoolWorker-8] Contextual frame analysis: temp_uploads/video_analyzer_icg4xc7n/keyframes/keyframe_023.jpg at 93.8s
+[2025-12-16 21:40:40,217: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:40,219: WARNING/ForkPoolWorker-8] Vision API returned error response, attempting retry...
+[2025-12-16 21:40:48,407: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:40:48,408: INFO/ForkPoolWorker-8] Contextual frame analysis completed
+[2025-12-16 21:40:48,449: INFO/ForkPoolWorker-8] Uploaded keyframe: videos/33/keyframes/keyframe_013.jpg
+[2025-12-16 21:40:48,453: INFO/ForkPoolWorker-8] [33] Generating final report...
+[2025-12-16 21:40:48,456: INFO/ForkPoolWorker-8] Starting full flow analysis...
+[2025-12-16 21:40:48,456: INFO/ForkPoolWorker-8] Final prompt size: transcript=1087 chars, keyframes=14
+[2025-12-16 21:41:21,281: INFO/ForkPoolWorker-8] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-12-16 21:41:21,283: INFO/ForkPoolWorker-8] Full flow analysis completed successfully
+[2025-12-16 21:41:21,283: INFO/ForkPoolWorker-8] [33] Generating diagrams...
+[2025-12-16 21:41:21,283: INFO/ForkPoolWorker-8] DiagramGenerator initialized
+[2025-12-16 21:41:21,283: INFO/ForkPoolWorker-8] Generating sequence diagram from 1 flows
+[2025-12-16 21:41:21,303: INFO/ForkPoolWorker-8] [33] Video processing COMPLETED successfully.
+[2025-12-16 21:41:21,361: INFO/ForkPoolWorker-8] Task processing_pipeline.process_video_task[e21e3762-d6b3-44f2-9a0b-90f49616395d] succeeded in 418.0067569669991s: None
+[2025-12-16 22:03:13,060: INFO/MainProcess] Task processing_pipeline.process_video_task[9ec5adc9-7cce-42dd-8702-64ca89fbad2a] received
+[2025-12-16 22:03:13,063: INFO/ForkPoolWorker-8] Task process_video_task[9ec5adc9-7cce-42dd-8702-64ca89fbad2a] started for video_id=33
+[2025-12-16 22:03:13,065: ERROR/ForkPoolWorker-8] [33] FILE NOT FOUND: temp_uploads/video_analyzer_icg4xc7n/Tilby - Sala.mp4
+[2025-12-16 22:03:13,085: INFO/ForkPoolWorker-8] Task processing_pipeline.process_video_task[9ec5adc9-7cce-42dd-8702-64ca89fbad2a] succeeded in 0.022925632001715712s: None
+[2025-12-16 22:19:16,917: INFO/MainProcess] Task processing_pipeline.process_video_task[9db4f9c6-73f7-4a47-818a-f30b5872dbb2] received
+[2025-12-16 22:19:16,924: INFO/ForkPoolWorker-8] Task process_video_task[9db4f9c6-73f7-4a47-818a-f30b5872dbb2] started for video_id=33
+[2025-12-16 22:19:16,925: ERROR/ForkPoolWorker-8] [33] FILE NOT FOUND: temp_uploads/video_analyzer_icg4xc7n/Tilby - Sala.mp4
+[2025-12-16 22:19:16,946: INFO/ForkPoolWorker-8] Task processing_pipeline.process_video_task[9db4f9c6-73f7-4a47-818a-f30b5872dbb2] succeeded in 0.025026005998370238s: None
+[2025-12-16 22:22:01,556: INFO/MainProcess] Task processing_pipeline.process_video_task[344cb5ae-b288-429c-b097-77f1db348eea] received
+[2025-12-16 22:22:01,560: INFO/ForkPoolWorker-8] Task process_video_task[344cb5ae-b288-429c-b097-77f1db348eea] started for video_id=33
+[2025-12-16 22:22:01,561: ERROR/ForkPoolWorker-8] [33] FILE NOT FOUND: temp_uploads/video_analyzer_icg4xc7n/Tilby - Sala.mp4
+[2025-12-16 22:22:01,569: INFO/ForkPoolWorker-8] Task processing_pipeline.process_video_task[344cb5ae-b288-429c-b097-77f1db348eea] succeeded in 0.010850648999621626s: None

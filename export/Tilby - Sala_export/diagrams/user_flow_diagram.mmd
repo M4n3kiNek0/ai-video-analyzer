@@ -1,0 +1,18 @@
+flowchart TD
+
+    classDef screenNode fill:#e0f2fe,stroke:#0284c7
+    classDef actionNode fill:#fef3c7,stroke:#f59e0b
+    classDef decisionNode fill:#fce7f3,stroke:#ec4899
+
+    Start([Avvio Applicazione])
+    M1[Gestione Sale]
+    Start --> M1
+    M2[Gestione Tavoli]
+    M1 --> M2
+    F3[/Aggiunta Nuovo Tavolo/]
+    M2 --> F3
+    S4[Seleziona 'modifica sale e tavoli'.]
+    F3 --> S4
+    S5[Configura un nuovo tavolo scegliendo for]
+    F3 --> S5
+    M2 --> EndNode([Fine])

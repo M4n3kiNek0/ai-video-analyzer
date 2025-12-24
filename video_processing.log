@@ -1,0 +1,42 @@
+
+############################################################
+#  AVVIO ELABORAZIONE VIDEO ID=26
+############################################################
+[26] Video path: C:\Users\DANIEL~1\AppData\Local\Temp\video_analyzer_hx_fdqxa\applicazioni-varie.mp4
+[26] Temp dir: C:\Users\DANIEL~1\AppData\Local\Temp\video_analyzer_hx_fdqxa
+[26] File exists: True
+[26] Updating video status to 'completed'...
+[26] Status updated and committed to database!
+
+============================================================
+[26] ELABORAZIONE COMPLETATA CON SUCCESSO
+============================================================
+[26] Temp files cleaned up
+
+############################################################
+#  AVVIO ELABORAZIONE VIDEO ID=27
+############################################################
+[27] Video path: C:\Users\DANIEL~1\AppData\Local\Temp\video_analyzer_h75w7jf2\Presentazione Generale 2.mp4
+[27] Temp dir: C:\Users\DANIEL~1\AppData\Local\Temp\video_analyzer_h75w7jf2
+[27] File exists: True
+[27] Updating video status to 'completed'...
+[27] Status updated and committed to database!
+
+============================================================
+[27] ELABORAZIONE COMPLETATA CON SUCCESSO
+============================================================
+[27] Temp files cleaned up
+
+############################################################
+#  AVVIO ELABORAZIONE VIDEO ID=28
+############################################################
+[28] Video path: C:\Users\DANIEL~1\AppData\Local\Temp\video_analyzer_ts9ofge3\Presentazione Generale 2.mp4
+[28] Temp dir: C:\Users\DANIEL~1\AppData\Local\Temp\video_analyzer_ts9ofge3
+[28] File exists: True
+[28] Updating video status to 'completed'...
+[28] Status updated and committed to database!
+
+============================================================
+[28] ELABORAZIONE COMPLETATA CON SUCCESSO
+============================================================
+[28] Temp files cleaned up

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=3">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+            <i data-lucide="menu"></i>
+        </button>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i data-lucide="play" class="logo-lucide"></i></div>
+                <span>Media Analyzer</span>
+            </div>
+            
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-view="upload">
+                    <span class="nav-icon"><i data-lucide="upload"></i></span>
+                    <span class="nav-text">Upload</span>
+                </a>
+                <a href="#" class="nav-item" data-view="videos">
+                    <span class="nav-icon"><i data-lucide="folder-open"></i></span>
+                    <span class="nav-text">Media Library</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <span class="nav-icon"><i data-lucide="settings"></i></span>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot" id="apiStatus"></span>
+                    <span id="apiStatusText">Checking...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload View -->
+            <section id="uploadView" class="view active">
+                <header class="view-header">
+                    <h1>Carica Media</h1>
+                    <p>Carica un video o audio per l'analisi automatica con AI</p>
+                </header>
+
+                <!-- Media Type Toggle -->
+                <div class="media-type-toggle" id="mediaTypeToggle">
+                    <button type="button" class="toggle-btn active" data-type="video" onclick="setMediaType('video')">
+                        <span class="toggle-icon"><i data-lucide="video"></i></span>
+                        <span>Video</span>
+                    </button>
+                    <button type="button" class="toggle-btn" data-type="audio" onclick="setMediaType('audio')">
+                        <span class="toggle-icon"><i data-lucide="music"></i></span>
+                        <span>Audio</span>
+                    </button>
+                </div>
+
+                <div class="upload-zone" id="dropZone">
+                    <div class="upload-icon" id="uploadIcon"><i data-lucide="video"></i></div>
+                    <h3 id="uploadTitle">Trascina qui il tuo video</h3>
+                    <p>oppure</p>
+                    <label class="btn btn-primary" onclick="event.stopPropagation()">
+                        <input type="file" id="fileInput" accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a,.ogg,.flac,.aac,.wma,.opus" hidden>
+                        <i data-lucide="upload"></i>
+                        Seleziona File
+                    </label>
+                    <p class="upload-hint" id="uploadHint">Formati supportati: MP4, MOV, AVI, MKV, WEBM</p>
+                </div>
+                
+                <!-- Analysis Type (for all media) -->
+                <div class="analysis-type-section" id="analysisTypeSection">
+                    <label for="analysisType"><i data-lucide="target"></i> Tipo di Analisi</label>
+                    <p class="analysis-type-hint">Seleziona il tipo di contenuto per ottimizzare l'analisi e l'export</p>
+                    <div class="analysis-type-cards" id="analysisTypeCards">
+                        <label class="analysis-type-card active" data-type="auto">
+                            <input type="radio" name="analysisType" value="auto" checked>
+                            <span class="card-icon"><i data-lucide="sparkles"></i></span>
+                            <span class="card-content">
+                                <span class="card-title">Auto-detect</span>
+                                <span class="card-desc">L'AI determina il tipo</span>
+                            </span>
+                        </label>
+                        <label class="analysis-type-card" data-type="reverse_engineering">
+                            <input type="radio" name="analysisType" value="reverse_engineering">
+                            <span class="card-icon"><i data-lucide="code"></i></span>
+                            <span class="card-content">
+                                <span class="card-title">Reverse Engineering</span>
+                                <span class="card-desc">Demo app, tutorial tecnici</span>
+                            </span>
+                        </label>
+                        <label class="analysis-type-card" data-type="meeting">
+                            <input type="radio" name="analysisType" value="meeting">
+                            <span class="card-icon"><i data-lucide="users"></i></span>
+                            <span class="card-content">
+                                <span class="card-title">Meeting Notes</span>
+                                <span class="card-desc">Riunioni, action items</span>
+                            </span>
+                        </label>
+                        <label class="analysis-type-card" data-type="debrief">
+                            <input type="radio" name="analysisType" value="debrief">
+                            <span class="card-icon"><i data-lucide="clipboard-check"></i></span>
+                            <span class="card-content">
+                                <span class="card-title">Debrief</span>
+                                <span class="card-desc">Retrospettive, lessons learned</span>
+                            </span>
+                        </label>
+                        <label class="analysis-type-card" data-type="brainstorming">
+                            <input type="radio" name="analysisType" value="brainstorming">
+                            <span class="card-icon"><i data-lucide="lightbulb"></i></span>
+                            <span class="card-content">
+                                <span class="card-title">Brainstorming</span>
+                                <span class="card-desc">Sessioni creative, idee</span>
+                            </span>
+                        </label>
+                        <label class="analysis-type-card" data-type="notes">
+                            <input type="radio" name="analysisType" value="notes">
+                            <span class="card-icon"><i data-lucide="file-text"></i></span>
+                            <span class="card-content">
+                                <span class="card-title">Note</span>
+                                <span class="card-desc">Appunti, memo vocali</span>
+                            </span>
+                        </label>
+                    </div>
+                    <!-- Hidden select for form compatibility -->
+                    <select id="analysisType" class="form-select" style="display: none;">
+                        <option value="auto" selected>Auto-detect (AI)</option>
+                        <option value="reverse_engineering">Reverse Engineering</option>
+                        <option value="meeting">Meeting Notes</option>
+                        <option value="debrief">Debrief</option>
+                        <option value="brainstorming">Brainstorming</option>
+                        <option value="notes">Note</option>
+                    </select>
+                </div>
+                
+                <!-- Context Input (REQUIRED) -->
+                <div class="context-input-section" id="contextSection">
+                    <div class="context-header">
+                        <label for="videoContext" id="contextLabel"><i data-lucide="file-text"></i> Descrizione del Contenuto <span class="required-badge">Obbligatoria</span></label>
+                        <p class="context-hint" id="contextHint">
+                            Descrivi il contenuto: tipo, contesto, partecipanti, argomenti principali.
+                            <strong>Una buona descrizione migliora significativamente la qualità dell'analisi.</strong>
+                        </p>
+                    </div>
+                    <textarea 
+                        id="videoContext" 
+                        placeholder="Descrivi il contenuto: di cosa tratta? Chi parla o cosa viene mostrato? Qual è il contesto? Quali sono gli argomenti principali o le funzionalità dimostrate? Più dettagli fornisci, migliore sarà l'analisi..."
+                        rows="5"
+                    ></textarea>
+                    <div class="context-actions">
+                        <span id="charCount" class="char-count">0 / 50 caratteri minimi</span>
+                        <button type="button" id="optimizePromptBtn" class="btn btn-secondary btn-small" disabled>
+                            <i data-lucide="sparkles"></i> Ottimizza con AI
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal per prompt ottimizzato -->
+                <div id="optimizedPromptModal" class="modal-overlay" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3><i data-lucide="sparkles"></i> Descrizione Ottimizzata</h3>
+                            <button type="button" class="modal-close" onclick="closeOptimizeModal()"><i data-lucide="x"></i></button>
+                        </div>
+                        <p class="modal-hint">L'AI ha migliorato la tua descrizione per ottenere risultati migliori:</p>
+                        
+                        <div class="prompt-comparison">
+                            <div class="prompt-box original">
+                                <h4><i data-lucide="file-text"></i> Originale</h4>
+                                <div id="originalPromptPreview"></div>
+                            </div>
+                            <div class="prompt-box optimized">
+                                <h4><i data-lucide="sparkles"></i> Ottimizzata <span class="edit-hint">(puoi modificarla)</span></h4>
+                                <textarea id="optimizedPromptPreview" rows="8" placeholder="Descrizione ottimizzata..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div id="improvementsList" class="improvements-list"></div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" id="useOriginalBtn" class="btn btn-secondary">
+                                Usa Originale
+                            </button>
+                            <button type="button" id="useOptimizedBtn" class="btn btn-primary">
+                                <i data-lucide="sparkles"></i> Usa Ottimizzata
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="file-info">
+                        <span class="file-icon"><i data-lucide="file"></i></span>
+                        <div class="file-details">
+                            <span class="file-name" id="fileName"></span>
+                            <span class="file-size" id="fileSize"></span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">0%</span>
+                </div>
+
+                <!-- Processing Container (Split View) -->
+                <div class="processing-container" id="processingContainer" style="display: none;">
+                    <!-- Left: Progress Card -->
+                    <div class="processing-left">
+                        <div class="processing-card" id="processingCard">
+                            <div class="processing-header">
+                                <div class="spinner"></div>
+                                <h3 id="processingTitle">Analisi in corso...</h3>
+                            </div>
+                            <div class="processing-steps" id="videoProcessingSteps">
+                                <div class="step" id="step1">
+                                    <span class="step-icon"><i data-lucide="audio-lines"></i></span>
+                                    <span class="step-text">Estrazione audio</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="step2">
+                                    <span class="step-icon"><i data-lucide="file-text"></i></span>
+                                    <span class="step-text">Trascrizione (Whisper)</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="step3">
+                                    <span class="step-icon"><i data-lucide="image"></i></span>
+                                    <span class="step-text">Estrazione keyframe</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="step4">
+                                    <span class="step-icon"><i data-lucide="eye"></i></span>
+                                    <span class="step-text">Analisi visiva (GPT-4 Vision)</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="step5">
+                                    <span class="step-icon"><i data-lucide="brain"></i></span>
+                                    <span class="step-text">Generazione report</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                            </div>
+                            <div class="processing-steps" id="audioProcessingSteps" style="display: none;">
+                                <div class="step" id="audioStep1">
+                                    <span class="step-icon"><i data-lucide="refresh-cw"></i></span>
+                                    <span class="step-text">Preparazione audio</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="audioStep2">
+                                    <span class="step-icon"><i data-lucide="file-text"></i></span>
+                                    <span class="step-text">Trascrizione (Whisper)</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="audioStep3">
+                                    <span class="step-icon"><i data-lucide="brain"></i></span>
+                                    <span class="step-text">Arricchimento semantico</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                                <div class="step" id="audioStep4">
+                                    <span class="step-icon"><i data-lucide="bar-chart-3"></i></span>
+                                    <span class="step-text">Generazione report</span>
+                                    <span class="step-status"><i data-lucide="loader-2" class="spin"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Terminal Log -->
+                    <div class="processing-right">
+                        <div class="terminal-log" id="terminalLog">
+                            <div class="terminal-header">
+                                <span class="terminal-title">
+                                    <i data-lucide="terminal"></i> Processing Log
+                                </span>
+                                <button class="terminal-clear" onclick="TerminalLog.clear()" title="Clear log">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                            <div class="terminal-body" id="terminalBody">
+                                <div class="log-entry info"><span class="log-time">[--:--:--]</span> Waiting for process to start...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Media List View -->
+            <section id="videosView" class="view">
+                <header class="view-header">
+                    <h1>Media Library</h1>
+                    <p>I tuoi media analizzati (video e audio)</p>
+                    <div class="filter-buttons">
+                        <button class="btn btn-small filter-btn active" data-filter="all" onclick="filterMedia('all')">Tutti</button>
+                        <button class="btn btn-small filter-btn" data-filter="video" onclick="filterMedia('video')"><i data-lucide="video"></i> Video</button>
+                        <button class="btn btn-small filter-btn" data-filter="audio" onclick="filterMedia('audio')"><i data-lucide="music"></i> Audio</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadVideos()"><i data-lucide="refresh-cw"></i> Aggiorna</button>
+                </header>
+
+                <div class="videos-grid" id="videosList">
+                    <!-- Media cards will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Media Detail View -->
+            <section id="detailView" class="view">
+                <header class="view-header">
+                    <div class="view-header-actions">
+                        <button class="btn btn-ghost" onclick="showView('videos')"><i data-lucide="arrow-left"></i> Torna alla lista</button>
+                        <div class="header-buttons">
+                            <button class="btn btn-primary" id="downloadPdfBtn" onclick="downloadPDF()">
+                                <i data-lucide="download"></i> Scarica PDF
+                            </button>
+                            <button class="btn btn-secondary" id="downloadZipBtn" onclick="downloadExportZip()">
+                                <i data-lucide="package"></i> Esporta Report
+                            </button>
+                            <button class="btn btn-danger" id="deleteVideoBtn" onclick="deleteCurrentVideo()">
+                                <i data-lucide="trash-2"></i> Elimina
+                            </button>
+                        </div>
+                    </div>
+                    <h1 id="detailTitle">Dettaglio Media</h1>
+                    <span class="media-type-badge" id="mediaTypeBadge"></span>
+                </header>
+
+                <div class="detail-content" id="detailContent">
+                    <!-- Media Info -->
+                    <div class="detail-card">
+                        <h3 id="infoCardTitle"><i data-lucide="info"></i> Informazioni</h3>
+                        <div class="info-grid" id="videoInfo"></div>
+                    </div>
+
+                    <!-- Transcript -->
+                    <div class="detail-card">
+                        <h3><i data-lucide="file-text"></i> Trascrizione</h3>
+                        <div class="transcript-box" id="transcriptBox">
+                            <p class="placeholder">Nessuna trascrizione disponibile</p>
+                        </div>
+                    </div>
+
+                    <!-- Keyframes (Video only) -->
+                    <div class="detail-card" id="keyframesCard">
+                        <h3><i data-lucide="image"></i> Keyframe Estratti</h3>
+                        <div class="keyframes-grid" id="keyframesGrid">
+                            <p class="placeholder">Nessun keyframe disponibile</p>
+                        </div>
+                    </div>
+
+                    <!-- Audio-specific sections -->
+                    <div class="detail-card" id="actionItemsCard" style="display: none;">
+                        <h3><i data-lucide="check-square"></i> Action Items</h3>
+                        <div class="action-items-list" id="actionItemsList">
+                            <p class="placeholder">Nessun action item estratto</p>
+                        </div>
+                    </div>
+
+                    <div class="detail-card" id="decisionsCard" style="display: none;">
+                        <h3><i data-lucide="target"></i> Decisioni</h3>
+                        <div class="decisions-list" id="decisionsList">
+                            <p class="placeholder">Nessuna decisione registrata</p>
+                        </div>
+                    </div>
+
+                    <div class="detail-card" id="speakersCard" style="display: none;">
+                        <h3><i data-lucide="users"></i> Partecipanti</h3>
+                        <div class="speakers-list" id="speakersList">
+                            <p class="placeholder">Nessun partecipante identificato</p>
+                        </div>
+                    </div>
+
+                    <!-- Analysis -->
+                    <div class="detail-card full-width">
+                        <h3><i data-lucide="brain"></i> Analisi AI</h3>
+                        <div class="analysis-content" id="analysisContent">
+                            <p class="placeholder">Nessuna analisi disponibile</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settingsView" class="view">
+                <header class="view-header">
+                    <h1>API Configuration</h1>
+                    <p>Configura provider AI e combinazioni di modelli per ottimizzare costi e qualità</p>
+                </header>
+
+                <div class="settings-container">
+                    <!-- Active Configuration Status -->
+                    <div class="settings-section status-section">
+                        <div class="status-header">
+                            <h2><i data-lucide="check-circle"></i> Configurazione Attiva</h2>
+                        </div>
+                        <div class="active-config-display" id="activeConfigCard">
+                            <div class="loading-spinner"></div>
+                            <p class="placeholder">Caricamento...</p>
+                        </div>
+                    </div>
+
+                    <!-- Preset Selector -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <div>
+                                <h2><i data-lucide="sparkles"></i> Preset Configurations</h2>
+                                <p class="section-description">Configurazioni predefinite ottimizzate per diversi use case</p>
+                            </div>
+                        </div>
+                        <div class="preset-cards-grid" id="presetCards">
+                            <div class="loading-placeholder">
+                                <div class="loading-spinner"></div>
+                                <p>Caricamento preset...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Configuration Editor -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <div>
+                                <h2><i data-lucide="settings"></i> Configurazione Personalizzata</h2>
+                                <p class="section-description">Crea una configurazione custom combinando provider diversi</p>
+                            </div>
+                        </div>
+                        
+                        <div class="config-editor">
+                            <div class="config-form">
+                                <div class="form-section">
+                                    <label for="configName" class="form-label">
+                                        <i data-lucide="tag"></i> Nome Configurazione
+                                    </label>
+                                    <input type="text" id="configName" class="form-input" placeholder="es. Configurazione Economica" required>
+                                </div>
+
+                                <div class="providers-grid" id="providersGrid">
+                                    <!-- Provider cards will be generated dynamically via JavaScript -->
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-outline" id="testConfigBtn">
+                                        <i data-lucide="test-tube"></i> Testa Configurazione
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="saveConfigBtn">
+                                        <i data-lucide="save"></i> Salva Configurazione
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Saved Configurations -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <div>
+                                <h2><i data-lucide="database"></i> Configurazioni Salvate</h2>
+                                <p class="section-description">Gestisci le tue configurazioni personalizzate</p>
+                            </div>
+                        </div>
+                        <div class="saved-configs-grid" id="savedConfigsList">
+                            <div class="loading-placeholder">
+                                <div class="loading-spinner"></div>
+                                <p>Caricamento configurazioni...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Lightbox for keyframes -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()"><i data-lucide="x"></i></button>
+        <button class="lightbox-prev" onclick="lightboxPrev()"><i data-lucide="chevron-left"></i></button>
+        <img class="lightbox-img" id="lightboxImg" src="" alt="Keyframe">
+        <button class="lightbox-next" onclick="lightboxNext()"><i data-lucide="chevron-right"></i></button>
+        <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+
+    <!-- Provider Guide Modal -->
+    <div id="providerGuideModal">
+        <div class="provider-modal-container">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <div class="modal-icon" id="modalProviderIcon"></div>
+                    <div>
+                        <h2 id="modalProviderName">Provider Guide</h2>
+                        <p class="modal-subtitle" id="modalProviderType"></p>
+                    </div>
+                </div>
+                <button class="modal-close" id="closeProviderModal" type="button">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="provider-modal-content" id="modalProviderContent">
+                <!-- Content will be dynamically loaded -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modular JavaScript -->
+    <script src="/static/js/state.js?v=3"></script>
+    <script src="/static/js/utils.js?v=3"></script>
+    <script src="/static/js/api.js?v=3"></script>
+    <script src="/static/js/upload.js?v=3"></script>
+    <script src="/static/js/videos.js?v=3"></script>
+    <script src="/static/js/export.js?v=3"></script>
+    <script src="/static/js/settings.js?v=3"></script>
+    <script src="/static/js/app.js?v=3"></script>
+</body>
+</html>
+

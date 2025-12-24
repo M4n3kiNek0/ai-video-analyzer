@@ -1,0 +1,10 @@
+
+############################################################
+#  AVVIO ELABORAZIONE AUDIO ID=24
+############################################################
+[24] Audio path: C:\Users\DANIEL~1\AppData\Local\Temp\audio_analyzer_sodu2dxi\Debriffing flat pay e sum up.m4a
+[24] Temp dir: C:\Users\DANIEL~1\AppData\Local\Temp\audio_analyzer_sodu2dxi
+[24] File exists: True
+[24] Converting audio to MP3 for Whisper...
+[24] Audio converted successfully: C:\Users\DANIEL~1\AppData\Local\Temp\audio_analyzer_sodu2dxi\audio_for_whisper.mp3
+[24] Temp files cleaned up

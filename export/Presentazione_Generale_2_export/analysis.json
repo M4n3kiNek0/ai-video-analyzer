@@ -1,0 +1,301 @@
+{
+  "video_id": 27,
+  "filename": "Presentazione Generale 2.mp4",
+  "duration_seconds": 249,
+  "analysis": {
+    "app_name_short": "RistoPOS",
+    "summary": "RistoPOS è un'applicazione desktop progettata per ristoranti che facilita la gestione delle ordinazioni e dei pagamenti al punto vendita. Consente di inserire rapidamente ordini tramite un tastierino numerico, gestire le specifiche dei clienti e i dettagli del pagamento. Include funzionalità di stampa, gestione di vari metodi di pagamento e integrazione con sistemi di gestione e-commerce.",
+    "app_type": "desktop",
+    "app_category": "POS",
+    "architecture_overview": {
+      "frontend_type": "MPA",
+      "estimated_complexity": "medium",
+      "main_screens_count": 5,
+      "navigation_pattern": "sidebar"
+    },
+    "modules": [
+      {
+        "name": "Gestione Ordini",
+        "description": "Consente l'inserimento e la gestione delle comande del ristorante.",
+        "purpose": "Permettere l'inserimento rapido di articoli nel conto del cliente.",
+        "screens": [
+          "Schermata iniziale",
+          "Tastierino",
+          "Tabella ordini"
+        ],
+        "key_features": [
+          "Inserimento rapido ordini",
+          "Gestione dettagli cliente"
+        ],
+        "crud_operations": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ],
+        "data_entities": [
+          "Ordine",
+          "Cliente"
+        ]
+      },
+      {
+        "name": "Gestione Pagamenti",
+        "description": "Gestione dei metodi di pagamento e stampe pre-conto.",
+        "purpose": "Facilitare la chiusura del conto e la stampa di documenti pre-contabili.",
+        "screens": [
+          "Selezione pagamento",
+          "Dettagli pagamento"
+        ],
+        "key_features": [
+          "Supporto multivaluta",
+          "Stampa preconto"
+        ],
+        "crud_operations": [
+          "read"
+        ],
+        "data_entities": [
+          "Pagamento"
+        ]
+      },
+      {
+        "name": "Integrazione E-commerce",
+        "description": "Integrazioni con piattaforme di delivery e servizi online.",
+        "purpose": "Gestire ordini provenienti da Just Eat, Uber Eats, etc.",
+        "screens": [
+          "Consolle delivery"
+        ],
+        "key_features": [
+          "Gestione degli ordini di delivery"
+        ],
+        "crud_operations": [
+          "read",
+          "update"
+        ],
+        "data_entities": [
+          "Ordine"
+        ]
+      }
+    ],
+    "data_model": {
+      "entities": [
+        {
+          "name": "Ordine",
+          "description": "Rappresenta un ordine cliente singolo.",
+          "fields": [
+            {
+              "name": "id",
+              "type": "number",
+              "description": "Identificativo univoco dell'ordine",
+              "required": true,
+              "example": 1
+            },
+            {
+              "name": "data_ordine",
+              "type": "date",
+              "description": "Data e ora dell'ordine",
+              "required": true,
+              "example": "2023-10-01T13:45Z"
+            },
+            {
+              "name": "totale",
+              "type": "number",
+              "description": "Importo totale dell'ordine",
+              "required": true,
+              "example": 100.5
+            }
+          ],
+          "relationships": [
+            {
+              "type": "belongs_to",
+              "target": "Cliente",
+              "description": "Cliente associato all'ordine"
+            }
+          ]
+        },
+        {
+          "name": "Pagamento",
+          "description": "Dettagli su un metodo di pagamento utilizzato.",
+          "fields": [
+            {
+              "name": "metodo",
+              "type": "enum",
+              "description": "Metodo di pagamento usato",
+              "required": true,
+              "example": "Contanti"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "belongs_to",
+              "target": "Ordine",
+              "description": "Ordine a cui è associato il pagamento"
+            }
+          ]
+        },
+        {
+          "name": "Cliente",
+          "description": "Informazioni su un cliente del ristorante.",
+          "fields": [
+            {
+              "name": "nome",
+              "type": "string",
+              "description": "Nome del cliente",
+              "required": false,
+              "example": "Mario Rossi"
+            }
+          ],
+          "relationships": []
+        }
+      ],
+      "enums": [
+        {
+          "name": "MetodoPagamento",
+          "values": [
+            "Contanti",
+            "Carta",
+            "Bonifico",
+            "Assegno"
+          ],
+          "description": "Enumerazione dei metodi di pagamento disponibili"
+        }
+      ]
+    },
+    "user_flows": [
+      {
+        "name": "Inserimento Ordine",
+        "description": "Processo di aggiunta di un nuovo ordine tramite il tastierino.",
+        "trigger": "Quando un cliente effettua un nuovo ordine.",
+        "actors": [
+          "Utente"
+        ],
+        "preconditions": [
+          "L'applicazione è avviata",
+          "Utente autenticato"
+        ],
+        "steps": [
+          {
+            "step": 1,
+            "timestamp": "14.67s",
+            "actor": "Utente",
+            "action": "Seleziona piatto di pesce tramite tastierino.",
+            "ui_element": "Tastierino",
+            "input_data": "Scelta del piatto",
+            "system_response": "Aggiungi piatto alla schermata ordini",
+            "next_state": "Ordine aggiornato"
+          }
+        ],
+        "outcome": "Il piatto selezionato è aggiunto al conto corrente del cliente.",
+        "alternative_paths": [
+          "Selezione tramite menu dropdown"
+        ]
+      }
+    ],
+    "api_specification": {
+      "base_url": "/api",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/ordini",
+          "description": "Crea un nuovo ordine",
+          "request_body": {
+            "piatti_selezionati": "array"
+          },
+          "response": {
+            "status": "string"
+          },
+          "inferred_from": "14.67s"
+        },
+        {
+          "method": "PUT",
+          "path": "/ordini/:id",
+          "description": "Aggiorna un ordine esistente",
+          "request_body": {
+            "dettagli_ordine": "object"
+          },
+          "response": {
+            "status": "string"
+          },
+          "inferred_from": "20.48s"
+        }
+      ]
+    },
+    "ui_components_library": {
+      "design_system": "Custom",
+      "components_used": [
+        {
+          "name": "Tastierino",
+          "type": "Input",
+          "variants": [
+            "numerico"
+          ],
+          "usage_count": "3",
+          "custom_styling": "Su misura per le esigenze di un POS"
+        }
+      ],
+      "icons_library": "FontAwesome",
+      "color_palette": {
+        "primary": "#007BFF",
+        "secondary": "#6C757D",
+        "background": "#F8F9FA",
+        "accent": "#17A2B8"
+      }
+    },
+    "state_management": {
+      "global_state": [
+        "Ordini attuali",
+        "Metodi di pagamento configurati"
+      ],
+      "local_state": [
+        "Dettagli ordine corrente"
+      ],
+      "persistence": "localStorage"
+    },
+    "issues_and_observations": [
+      {
+        "type": "UX",
+        "description": "L'interfaccia potrebbe essere confusa durante la selezione di molti piatti contemporaneamente.",
+        "timestamp": "14.67s",
+        "severity": "medium",
+        "affected_component": "Tastierino",
+        "suggested_fix": "Implementare una modalità batch per la selezione di piatti."
+      }
+    ],
+    "technology_stack": {
+      "frontend_framework": "unknown",
+      "ui_library": "Custom",
+      "state_management": "localStorage",
+      "styling": "CSS Custom",
+      "platform": "Electron"
+    },
+    "recommendations": [
+      {
+        "category": "UX",
+        "priority": "high",
+        "description": "Migliorare la procedura di aggiunta degli articoli con un'interfaccia più intuitiva.",
+        "implementation_hint": "Utilizzare modali con drag-and-drop per la selezione rapida di più piatti."
+      }
+    ],
+    "reconstruction_guide": {
+      "estimated_effort": "weeks",
+      "key_challenges": [
+        "Gestione dinamica dei metodi di pagamento",
+        "Integrazione con piattaforme di delivery"
+      ],
+      "required_skills": [
+        "JavaScript",
+        "React",
+        "Node.js"
+      ],
+      "suggested_stack": [
+        "Electron",
+        "React",
+        "Express"
+      ],
+      "mvp_features": [
+        "Gestione base degli ordini",
+        "Supporto ai metodi di pagamento principali"
+      ]
+    }
+  },
+  "generated_at": "2025-12-15T23:21:16.562310"
+}

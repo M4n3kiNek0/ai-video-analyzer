@@ -1,0 +1,8 @@
+--------------------------------------------------
+Latest Videos:
+ID: 35, File: applicazioni-varie.mp4, Status: completed
+--------------------------------------------------
+Active API Config:
+Name: OpenAI
+Transcription: openai (whisper-1)
+Vision: openai (gpt-4o)

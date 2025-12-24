@@ -1,0 +1,18 @@
+flowchart TD
+
+    classDef screenNode fill:#e0f2fe,stroke:#0284c7
+    classDef actionNode fill:#fef3c7,stroke:#f59e0b
+    classDef decisionNode fill:#fce7f3,stroke:#ec4899
+
+    Start([Avvio Applicazione])
+    M1[Gestione Ordini]
+    Start --> M1
+    M2[Gestione Pagamenti]
+    M1 --> M2
+    M3[Integrazione E-commerce]
+    M2 --> M3
+    F4[/Inserimento Ordine/]
+    M3 --> F4
+    S5[Seleziona piatto di pesce tramite tastie]
+    F4 --> S5
+    M3 --> EndNode([Fine])

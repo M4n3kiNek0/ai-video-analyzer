@@ -1,0 +1,301 @@
+{
+  "video_id": 33,
+  "filename": "Tilby - Sala.mp4",
+  "duration_seconds": 117,
+  "analysis": {
+    "app_name_short": "Tilby",
+    "summary": "Tilby è un'applicazione di gestione ristoranti che consente agli utenti di personalizzare la configurazione delle sale e dei tavoli. È progettata per ristoratori che desiderano ottimizzare la disposizione del loro spazio e la gestione delle prenotazioni. Le funzionalità principali includono l'aggiunta, la modifica e l'eliminazione di tavoli con diverse specifiche, come forma e capacità. L'applicazione supporta inoltre la gestione delle comande sia singole che multiple.",
+    "app_type": "web",
+    "app_category": "Management",
+    "architecture_overview": {
+      "frontend_type": "SPA",
+      "estimated_complexity": "medium",
+      "main_screens_count": 3,
+      "navigation_pattern": "tabs"
+    },
+    "modules": [
+      {
+        "name": "Gestione Sale",
+        "description": "Gestisce la configurazione delle sale del ristorante, consentendo la personalizzazione degli ambienti.",
+        "purpose": "Ottimizzare l'organizzazione fisica delle sale per una migliore gestione delle prenotazioni e del layout.",
+        "screens": [
+          "Schermata principale di gestione sale"
+        ],
+        "key_features": [
+          "Visualizzazione layout sale",
+          "Modifica configurazione tavoli",
+          "Eliminazione tavoli"
+        ],
+        "crud_operations": [
+          "read",
+          "update",
+          "delete"
+        ],
+        "data_entities": [
+          "Sala",
+          "Tavolo"
+        ]
+      },
+      {
+        "name": "Gestione Tavoli",
+        "description": "Permette l'aggiunta e la configurazione dei tavoli con specifiche dettagliate.",
+        "purpose": "Facilitare la creazione di configurazioni personalizzate dei tavoli per soddisfare le esigenze del locale.",
+        "screens": [
+          "Modal di creazione tavoli"
+        ],
+        "key_features": [
+          "Aggiunta tavoli",
+          "Personalizzazione dimensioni e forma",
+          "Definizione comande singole e multiple"
+        ],
+        "crud_operations": [
+          "create",
+          "update"
+        ],
+        "data_entities": [
+          "Tavolo"
+        ]
+      }
+    ],
+    "data_model": {
+      "entities": [
+        {
+          "name": "Tavolo",
+          "description": "Un elemento dell'interfaccia che rappresenta un tavolo fisico.",
+          "fields": [
+            {
+              "name": "forma",
+              "type": "enum",
+              "description": "Forma del tavolo",
+              "required": true,
+              "example": "tondo"
+            },
+            {
+              "name": "numero_posti",
+              "type": "number",
+              "description": "Numero massimo di persone",
+              "required": true,
+              "example": 4
+            },
+            {
+              "name": "nome",
+              "type": "string",
+              "description": "Etichetta del tavolo",
+              "required": true,
+              "example": "18 bis"
+            },
+            {
+              "name": "comanda_tipo",
+              "type": "enum",
+              "description": "Tipo di comanda (singola o multipla)",
+              "required": false,
+              "example": "singola"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "belongs_to",
+              "target": "Sala",
+              "description": "Il tavolo appartiene a una sala"
+            }
+          ]
+        },
+        {
+          "name": "Sala",
+          "description": "Rappresenta una stanza nel ristorante dove sono posizionati i tavoli.",
+          "fields": [
+            {
+              "name": "layout",
+              "type": "relation",
+              "description": "Configurazione della disposizione dei tavoli",
+              "required": true,
+              "example": "layout JSON"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "has_many",
+              "target": "Tavolo",
+              "description": "Una sala contiene molti tavoli"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": "FormaTavolo",
+          "values": [
+            "tondo",
+            "quadrato"
+          ],
+          "description": "Forme disponibili per i tavoli"
+        },
+        {
+          "name": "TipoComanda",
+          "values": [
+            "singola",
+            "multipla"
+          ],
+          "description": "Tipi di comanda per i tavoli"
+        }
+      ]
+    },
+    "user_flows": [
+      {
+        "name": "Aggiunta Nuovo Tavolo",
+        "description": "Flusso per aggiungere un nuovo tavolo alla configurazione di una sala.",
+        "trigger": "Utente apre la schermata gestione e decide di aggiungere un tavolo.",
+        "actors": [
+          "Utente",
+          "Sistema"
+        ],
+        "preconditions": [
+          "Utente autenticato e nella schermata gestione sale"
+        ],
+        "steps": [
+          {
+            "step": 1,
+            "timestamp": "3.81s",
+            "actor": "Utente",
+            "action": "Seleziona 'modifica sale e tavoli'.",
+            "ui_element": "canvas editor",
+            "system_response": "Apre editor di disposizione tavoli.",
+            "next_state": "modal di configurazione tavolo aperto"
+          },
+          {
+            "step": 2,
+            "timestamp": "23.37s",
+            "actor": "Utente",
+            "action": "Configura un nuovo tavolo scegliendo forma, dimensioni, e altre specifiche.",
+            "ui_element": "modal di configurazione tavolo",
+            "input_data": "forma: tondo, numero_posti: 4, nome: 18 bis",
+            "system_response": "Visualizza tavolo configurato nel layout.",
+            "next_state": "tavolo configurato pronto per essere salvato"
+          }
+        ],
+        "outcome": "Un nuovo tavolo configurato e aggiunto alla sala.",
+        "alternative_paths": [
+          "Ritorno senza salvare le modifiche"
+        ]
+      }
+    ],
+    "api_specification": {
+      "base_url": "/api",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/tavolo",
+          "description": "Aggiunge un nuovo tavolo alla configurazione.",
+          "request_body": {
+            "forma": "string",
+            "numero_posti": "number",
+            "nome": "string",
+            "comanda_tipo": "string"
+          },
+          "response": {
+            "tavolo_id": "number"
+          },
+          "inferred_from": "23.37s"
+        },
+        {
+          "method": "DELETE",
+          "path": "/tavolo/:id",
+          "description": "Rimuove un tavolo specifico.",
+          "request_body": {},
+          "response": {
+            "success": "boolean"
+          },
+          "inferred_from": "89.89s"
+        }
+      ]
+    },
+    "ui_components_library": {
+      "design_system": "unknown",
+      "components_used": [
+        {
+          "name": "Button",
+          "type": "Button",
+          "variants": [
+            "primary"
+          ],
+          "usage_count": "stimato: alto",
+          "custom_styling": "pulsanti con icone di azione"
+        },
+        {
+          "name": "Modal",
+          "type": "Modal",
+          "variants": [
+            "configurazione tavolo"
+          ],
+          "usage_count": "stimato: medio",
+          "custom_styling": "modal per configurare il tavolo"
+        }
+      ],
+      "icons_library": "unknown",
+      "color_palette": {
+        "primary": "#colore_1",
+        "secondary": "#colore_2",
+        "background": "colore chiaro per lo sfondo della sala",
+        "accent": "#colore_accento"
+      }
+    },
+    "state_management": {
+      "global_state": [
+        "layout sale",
+        "configurazioni tavoli"
+      ],
+      "local_state": [
+        "configurazione corrente tavolo"
+      ],
+      "persistence": "localStorage"
+    },
+    "issues_and_observations": [
+      {
+        "type": "UI",
+        "description": "La scelta delle dimensioni dei tavoli è limitata a preset.",
+        "timestamp": "89.89s",
+        "severity": "medium",
+        "affected_component": "modulo di configurazione tavolo",
+        "suggested_fix": "Aggiungere un input per dimensioni personalizzate"
+      }
+    ],
+    "technology_stack": {
+      "frontend_framework": "unknown",
+      "ui_library": "unknown",
+      "state_management": "unknown",
+      "styling": "unknown",
+      "platform": "Web"
+    },
+    "recommendations": [
+      {
+        "category": "UX",
+        "priority": "medium",
+        "description": "Aumentare la flessibilità nella configurazione delle dimensioni dei tavoli.",
+        "implementation_hint": "Consentire l'input manuale delle dimensioni oltre alle opzioni preset."
+      }
+    ],
+    "reconstruction_guide": {
+      "estimated_effort": "2-3 weeks",
+      "key_challenges": [
+        "Implementazione di un editor layout intuitivo",
+        "Gestione delle dinamiche di sala"
+      ],
+      "required_skills": [
+        "JavaScript",
+        "UI/UX Design",
+        "API Development"
+      ],
+      "suggested_stack": [
+        "React",
+        "Node.js",
+        "CSS"
+      ],
+      "mvp_features": [
+        "Configurazione sale",
+        "Aggiunta/Modifica tavoli",
+        "Persistenza configurazioni"
+      ]
+    }
+  },
+  "generated_at": "2025-12-16T21:48:24.066209"
+}
