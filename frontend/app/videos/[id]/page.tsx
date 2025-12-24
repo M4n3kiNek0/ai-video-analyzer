@@ -219,15 +219,15 @@ export default function VideoDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="w-full md:w-1/3 lg:w-1/4 border-l border-white/10 bg-zinc-900 flex flex-col min-h-0">
                     <Tabs defaultValue="transcript" className="flex-1 flex flex-col min-h-0 overflow-hidden">
                         <div className="p-3 border-b border-white/5 flex-shrink-0">
-                            <TabsList className="w-full grid grid-cols-3">
-                                <TabsTrigger value="transcript" className="text-xs text-zinc-300 data-[state=active]:text-white">
-                                    <FileText className="w-4 h-4 mr-2 text-current" /> Transcript
+                            <TabsList className="w-full flex justify-start gap-1">
+                                <TabsTrigger value="transcript" className="text-xs">
+                                    📄 Transcript
                                 </TabsTrigger>
-                                <TabsTrigger value="analysis" className="text-xs text-zinc-300 data-[state=active]:text-white">
-                                    <Sparkles className="w-4 h-4 mr-2 text-current" /> Analysis
+                                <TabsTrigger value="analysis" className="text-xs">
+                                    ✨ Analysis
                                 </TabsTrigger>
-                                <TabsTrigger value="logs" className="text-xs text-zinc-300 data-[state=active]:text-white">
-                                    <Terminal className="w-4 h-4 mr-2 text-current" /> Log
+                                <TabsTrigger value="logs" className="text-xs">
+                                    💻 Log
                                 </TabsTrigger>
                             </TabsList>
                         </div>
