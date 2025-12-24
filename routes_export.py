@@ -28,6 +28,133 @@ logger = logging.getLogger(__name__)
 # Router
 router = APIRouter(prefix="/videos", tags=["export"])
 
+# ---------------------------------------------------------------------------
+# Export layout helpers
+# ---------------------------------------------------------------------------
+
+REVERSE_ENGINEERING_PATHS = {
+    "docs": "docs",
+    "data": "data",
+    "media_images": "media/images",
+    "diagrams": "diagrams",
+}
+
+DEFAULT_EXPORT_PATHS = {
+    "docs": "",
+    "data": "",
+    "media_images": "images",
+    "diagrams": "diagrams",
+}
+
+
+def _get_export_paths(template_type: Optional[str]) -> dict:
+    """Return folder layout based on template type."""
+    if template_type == "reverse_engineering":
+        return REVERSE_ENGINEERING_PATHS
+    return DEFAULT_EXPORT_PATHS
+
+
+def _join_export_path(prefix: str, filename: str) -> str:
+    """Join an export prefix with filename, avoiding leading slashes."""
+    return f"{prefix}/{filename}" if prefix else filename
+
+
+def _validate_mermaid(diagram_text: Optional[str], kind: str) -> Optional[str]:
+    """Basic validation to avoid writing truncated/invalid Mermaid diagrams."""
+    if not diagram_text:
+        return None
+    text = diagram_text.strip()
+    if len(text) < 40:
+        return None
+    if kind == "sequence" and "sequenceDiagram" not in text:
+        return None
+    if kind == "flow" and "flowchart" not in text and "graph" not in text:
+        return None
+    return text
+
+
+def _sequence_from_flows(user_flows: list) -> Optional[str]:
+    """Synthesize a simple sequence diagram from available user flows."""
+    if not user_flows:
+        return None
+    flow = user_flows[0]
+    steps = flow.get("steps") or []
+    if not steps:
+        return None
+
+    lines = ["sequenceDiagram", "    participant U as Utente", "    participant App as Sistema"]
+    for step in steps[:12]:
+        action = step.get("action") or step.get("description") or "Azione utente"
+        outcome = step.get("system_response") or step.get("outcome") or ""
+        action_line = f"    U->>App: {action[:80]}"
+        lines.append(action_line)
+        if outcome:
+            lines.append(f"    App-->>U: {outcome[:80]}")
+    return "\n".join(lines)
+
+
+def _flow_from_flows(user_flows: list) -> Optional[str]:
+    """Synthesize a flowchart from available user flows."""
+    if not user_flows:
+        return None
+    flow = user_flows[0]
+    steps = flow.get("steps") or []
+    if not steps:
+        return None
+
+    lines = ["flowchart TD", "    start([Inizio])"]
+    last_id = "start"
+    for idx, step in enumerate(steps[:15], 1):
+        node_id = f"s{idx}"
+        label = step.get("action") or step.get("description") or "Step"
+        label = label.replace("\"", "'")[:80]
+        lines.append(f"    {node_id}[\"{label}\"]")
+        lines.append(f"    {last_id} --> {node_id}")
+        last_id = node_id
+    lines.append(f"    {last_id} --> endNode([Fine])")
+    return "\n".join(lines)
+
+
+def _prepare_diagram_sources(analysis) -> dict:
+    """Validate or synthesize diagram sources for exports."""
+    sources = {"sequence_diagram": None, "user_flow_diagram": None}
+    if not analysis:
+        return sources
+
+    # Prefer stored diagrams when valid
+    seq_valid = _validate_mermaid(getattr(analysis, "sequence_diagram", None), "sequence")
+    flow_valid = _validate_mermaid(getattr(analysis, "user_flow_diagram", None), "flow")
+
+    # Fallback to user_flows if diagrams are missing/truncated
+    flows = []
+    if getattr(analysis, "output_format", None):
+        flows = analysis.output_format.get("user_flows", []) or []
+
+    if not seq_valid:
+        seq_valid = _sequence_from_flows(flows)
+    if not flow_valid:
+        flow_valid = _flow_from_flows(flows)
+
+    sources["sequence_diagram"] = seq_valid
+    sources["user_flow_diagram"] = flow_valid
+    return sources
+
+
+def _render_diagram_images(diagram_gen: DiagramGenerator, diagram_sources: dict) -> dict:
+    """Render Mermaid sources to PNG bytes when available."""
+    images = {}
+    for key, text in diagram_sources.items():
+        if not text:
+            continue
+        try:
+            png_data = diagram_gen.render_mermaid_to_image_sync(text, "png")
+            if png_data:
+                images[f"{key}_image"] = png_data
+                logger.info(f"Rendered {key} to PNG for export")
+        except Exception as render_err:
+            logger.warning(f"Failed to render {key} PNG: {render_err}")
+    return images
+
 
 def _get_video_data(video: Video) -> dict:
     """Helper to build video data dict for exports."""
@@ -124,16 +251,26 @@ def _get_template_files_table(template_type: str, media_type: str, keyframes_cou
     base_files = """| File/Cartella | Descrizione |
 |---------------|-------------|
 | `report.pdf` | Report PDF completo con copertina e indice |
-| `transcript.txt` | Trascrizione audio completa |
-| `analysis.json` | Dati di analisi in formato JSON |"""
+| `analysis.json` | Dati di analisi in formato JSON |
+| `transcript.txt` | Trascrizione audio completa |"""
     
     if template_type == "reverse_engineering":
-        return base_files + """
-| `descriptions.txt` | Descrizioni dettagliate di ogni keyframe |
-| `data_model.md` | Modello dati inferito |
-| `api_spec.md` | Specifiche API dedotte |
-| `images/` | Screenshot keyframe estratti |
-| `diagrams/` | Diagrammi Mermaid |"""
+        return """| File/Cartella | Descrizione |
+|---------------|-------------|
+| `report.pdf` | Report PDF completo con copertina e indice |
+| `docs/overview.md` | Riepilogo, architettura e stack individuato |
+| `docs/modules.md` | Moduli, schermate e feature estratte |
+| `docs/user_flows.md` | Flussi utente dettagliati con step e outcome |
+| `docs/data_model.md` | Modello dati inferito (entità e campi) |
+| `docs/api_spec.md` | Specifiche API dedotte |
+| `docs/tech_stack.md` | Stack tecnologico riconosciuto |
+| `docs/issues.md` | Issue UX/tecniche osservate |
+| `docs/recommendations.md` | Raccomandazioni di miglioramento |
+| `data/analysis.json` | Dati strutturati completi |
+| `data/transcript.txt` | Trascrizione audio completa |
+| `data/descriptions.txt` | Descrizioni dei keyframe |
+| `media/images/` | Screenshot keyframe estratti |
+| `diagrams/` | Diagrammi Mermaid (sorgente + PNG) |"""
     
     elif template_type == "meeting":
         return base_files + """
@@ -213,43 +350,196 @@ Le raccomandazioni in `recommendations.md` possono guidare i prossimi passi."""
         return base_usage + """
 
 ### Per Sviluppatori
-- `data_model.md` contiene lo schema dati inferito
-- `api_spec.md` elenca gli endpoint dedotti
+- `docs/overview.md` riassume architettura, stack e riepilogo
+- `docs/data_model.md` contiene lo schema dati inferito
+- `docs/api_spec.md` elenca gli endpoint dedotti
+- `docs/user_flows.md` raccoglie i flussi utente estratti
 - I diagrammi in `diagrams/` mostrano flussi e architettura
+- I dati grezzi sono in `data/` (JSON, trascrizione, keyframe)
 
 ### Immagini
-Gli screenshot in `images/` sono nominati cronologicamente."""
+Gli screenshot in `media/images/` sono nominati cronologicamente."""
     
     else:
         return base_usage
 
 
-def _add_template_specific_files(zip_file, template_type: str, analysis, video) -> None:
+def _generate_overview_md(output: dict, video) -> str:
+    """Overview doc with summary, architecture and stack."""
+    if not output:
+        return ""
+    
+    lines = [f"# Overview - {video.filename}", ""]
+    
+    if output.get("summary"):
+        lines.append("## Riepilogo")
+        lines.append(output["summary"])
+        lines.append("")
+    
+    arch = output.get("architecture_overview", {}) or {}
+    if arch:
+        lines.append("## Architettura")
+        if arch.get("app_type"):
+            lines.append(f"- **Tipo app:** {arch['app_type']}")
+        if arch.get("frontend_type"):
+            lines.append(f"- **Frontend:** {arch['frontend_type']}")
+        if arch.get("navigation_pattern"):
+            lines.append(f"- **Navigazione:** {arch['navigation_pattern']}")
+        if arch.get("main_screens_count"):
+            lines.append(f"- **Schermate principali:** {arch['main_screens_count']}")
+        lines.append("")
+    
+    stack = output.get("technology_stack", {}) or {}
+    if stack:
+        lines.append("## Stack Tecnologico Rilevato")
+        for key, label in [
+            ("frontend_framework", "Frontend Framework"),
+            ("ui_library", "UI Library"),
+            ("state_management", "State Management"),
+            ("styling", "Styling"),
+            ("platform", "Piattaforma"),
+        ]:
+            if stack.get(key):
+                lines.append(f"- **{label}:** {stack[key]}")
+        lines.append("")
+    
+    modules = output.get("modules", []) or []
+    if modules:
+        lines.append("## Moduli Principali")
+        for mod in modules[:8]:
+            name = mod.get("name", "Modulo")
+            desc = mod.get("description", "")
+            lines.append(f"- **{name}:** {desc}")
+        lines.append("")
+    
+    flows = output.get("user_flows", []) or []
+    if flows:
+        lines.append("## Flussi Utente")
+        for flow in flows[:5]:
+            name = flow.get("name", "Flusso")
+            steps = len(flow.get("steps", []))
+            lines.append(f"- **{name}** ({steps} step)")
+        lines.append("")
+    
+    return "\n".join(lines)
+
+
+def _generate_modules_md(output: dict, filename: str) -> str:
+    """Detailed modules doc."""
+    modules = output.get("modules", []) if output else []
+    if not modules:
+        return ""
+    
+    lines = [f"# Moduli e Feature - {filename}", ""]
+    for mod in modules:
+        name = mod.get("name", "Modulo")
+        desc = mod.get("description", "")
+        screens = mod.get("screens", [])
+        features = mod.get("key_features", [])
+        crud_ops = mod.get("crud_operations", [])
+        data_entities = mod.get("data_entities", [])
+        
+        lines.append(f"## {name}")
+        if desc:
+            lines.append(desc)
+        if screens:
+            lines.append("")
+            lines.append(f"- **Schermate:** {', '.join(screens)}")
+        if features:
+            lines.append(f"- **Feature:** {', '.join(features)}")
+        if crud_ops:
+            lines.append(f"- **Operazioni:** {', '.join(crud_ops)}")
+        if data_entities:
+            lines.append(f"- **Entità dati:** {', '.join(data_entities)}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _generate_user_flows_md(output: dict, filename: str) -> str:
+    """User flow doc with steps and outcomes."""
+    flows = output.get("user_flows", []) if output else []
+    if not flows:
+        return ""
+    
+    lines = [f"# Flussi Utente - {filename}", ""]
+    for flow in flows:
+        name = flow.get("name", "Flusso")
+        desc = flow.get("description", "")
+        steps = flow.get("steps", [])
+        lines.append(f"## {name}")
+        if desc:
+            lines.append(desc)
+        if steps:
+            lines.append("")
+            for step in steps:
+                num = step.get("step", "")
+                action = step.get("action", step.get("description", ""))
+                ts = step.get("timestamp", "")
+                outcome = step.get("outcome", step.get("system_response", ""))
+                line = f"{num}. {action}" if num else f"- {action}"
+                if ts:
+                    line += f" [`{ts}`]"
+                if outcome:
+                    line += f" → {outcome}"
+                lines.append(line)
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _generate_issues_md(output: dict, filename: str) -> str:
+    """Issues and observations doc."""
+    issues = output.get("issues_and_observations", []) if output else []
+    if not issues:
+        return ""
+    
+    lines = [f"# Issue e Osservazioni - {filename}", ""]
+    for issue in issues:
+        sev = issue.get("severity", "medium").upper()
+        typ = issue.get("type", "Issue")
+        desc = issue.get("description", "")
+        ts = issue.get("timestamp", "")
+        affected = issue.get("affected_component", "")
+        lines.append(f"## [{sev}] {typ}")
+        if desc:
+            lines.append(desc)
+        if affected:
+            lines.append(f"- **Componente:** {affected}")
+        if ts:
+            lines.append(f"- **Timestamp:** {ts}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _add_template_specific_files(zip_file, template_type: str, analysis, video, paths: dict) -> None:
     """Add template-specific markdown files to the ZIP export."""
     
     if not analysis or not analysis.output_format:
         return
     
     output = analysis.output_format
+    docs_prefix = paths.get("docs", "")
+    data_prefix = paths.get("data", "")
+    doc_path = lambda name: _join_export_path(docs_prefix, name)
+    data_path = lambda name: _join_export_path(data_prefix, name)
     
     if template_type == "meeting":
         # Action Items
         action_items = output.get("action_items", []) or (analysis.action_items if analysis.action_items else [])
         if action_items:
             content = _generate_action_items_md(action_items, video.filename)
-            zip_file.writestr("action_items.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("action_items.md"), content.encode('utf-8'))
             logger.info(f"Added action_items.md with {len(action_items)} items")
         
         # Decisions
         decisions = output.get("decisions", []) or (analysis.decisions if analysis.decisions else [])
         if decisions:
             content = _generate_decisions_md(decisions, video.filename)
-            zip_file.writestr("decisions.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("decisions.md"), content.encode('utf-8'))
             logger.info(f"Added decisions.md with {len(decisions)} decisions")
         
         # Meeting Minutes
         content = _generate_meeting_minutes_md(output, video)
-        zip_file.writestr("meeting_minutes.md", content.encode('utf-8'))
+        zip_file.writestr(doc_path("meeting_minutes.md"), content.encode('utf-8'))
         logger.info("Added meeting_minutes.md")
     
     elif template_type == "brainstorming":
@@ -257,21 +547,21 @@ def _add_template_specific_files(zip_file, template_type: str, analysis, video) 
         ideas = output.get("ideas_collected", [])
         if ideas:
             content = _generate_ideas_md(ideas, video.filename)
-            zip_file.writestr("ideas.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("ideas.md"), content.encode('utf-8'))
             logger.info(f"Added ideas.md with {len(ideas)} ideas")
         
         # Ideas by Category
         categories = output.get("ideas_by_category", [])
         if categories:
             content = _generate_ideas_by_category_md(categories, video.filename)
-            zip_file.writestr("ideas_by_category.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("ideas_by_category.md"), content.encode('utf-8'))
             logger.info(f"Added ideas_by_category.md")
         
         # Ideas Matrix CSV
         top_ideas = output.get("top_ideas", []) or output.get("feasibility_analysis", [])
         if top_ideas:
             content = _generate_ideas_matrix_csv(top_ideas)
-            zip_file.writestr("ideas_matrix.csv", content.encode('utf-8'))
+            zip_file.writestr(_join_export_path(data_prefix, "ideas_matrix.csv"), content.encode('utf-8'))
             logger.info(f"Added ideas_matrix.csv")
     
     elif template_type == "debrief":
@@ -279,57 +569,84 @@ def _add_template_specific_files(zip_file, template_type: str, analysis, video) 
         lessons = output.get("lessons_learned", [])
         if lessons:
             content = _generate_lessons_learned_md(lessons, video.filename)
-            zip_file.writestr("lessons_learned.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("lessons_learned.md"), content.encode('utf-8'))
             logger.info(f"Added lessons_learned.md with {len(lessons)} lessons")
         
         # Recommendations
         recommendations = output.get("recommendations", [])
         if recommendations:
             content = _generate_recommendations_md(recommendations, video.filename)
-            zip_file.writestr("recommendations.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("recommendations.md"), content.encode('utf-8'))
             logger.info(f"Added recommendations.md")
         
         # Improvements
         improvements = output.get("improvements", [])
         if improvements:
             content = _generate_improvements_md(improvements, video.filename)
-            zip_file.writestr("improvements.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("improvements.md"), content.encode('utf-8'))
             logger.info(f"Added improvements.md")
     
     elif template_type == "notes":
         # Notes
         content = _generate_notes_md(output, video)
-        zip_file.writestr("notes.md", content.encode('utf-8'))
+        zip_file.writestr(doc_path("notes.md"), content.encode('utf-8'))
         logger.info("Added notes.md")
         
         # Key Points
         key_points = output.get("key_points", [])
         if key_points:
             content = _generate_key_points_md(key_points, video.filename)
-            zip_file.writestr("key_points.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("key_points.md"), content.encode('utf-8'))
             logger.info(f"Added key_points.md")
     
     elif template_type == "reverse_engineering":
+        # Overview and summaries
+        overview_md = _generate_overview_md(output, video)
+        if overview_md:
+            zip_file.writestr(doc_path("overview.md"), overview_md.encode('utf-8'))
+            logger.info("Added overview.md")
+        
+        modules_md = _generate_modules_md(output, video.filename)
+        if modules_md:
+            zip_file.writestr(doc_path("modules.md"), modules_md.encode('utf-8'))
+            logger.info("Added modules.md")
+        
+        flows_md = _generate_user_flows_md(output, video.filename)
+        if flows_md:
+            zip_file.writestr(doc_path("user_flows.md"), flows_md.encode('utf-8'))
+            logger.info("Added user_flows.md")
+        
         # Data Model
         data_model = output.get("data_model", {})
         if data_model:
             content = _generate_data_model_md(data_model, video.filename)
-            zip_file.writestr("data_model.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("data_model.md"), content.encode('utf-8'))
             logger.info("Added data_model.md")
         
         # API Spec
         api_spec = output.get("api_specification", {})
         if api_spec:
             content = _generate_api_spec_md(api_spec, video.filename)
-            zip_file.writestr("api_spec.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("api_spec.md"), content.encode('utf-8'))
             logger.info("Added api_spec.md")
         
         # Tech Stack
         tech_stack = output.get("technology_stack", {})
         if tech_stack:
             content = _generate_tech_stack_md(tech_stack, video.filename)
-            zip_file.writestr("tech_stack.md", content.encode('utf-8'))
+            zip_file.writestr(doc_path("tech_stack.md"), content.encode('utf-8'))
             logger.info("Added tech_stack.md")
+        
+        issues_md = _generate_issues_md(output, video.filename)
+        if issues_md:
+            zip_file.writestr(doc_path("issues.md"), issues_md.encode('utf-8'))
+            logger.info("Added issues.md")
+        
+        recs = output.get("recommendations", [])
+        if recs:
+            content = _generate_recommendations_md(recs, video.filename)
+            zip_file.writestr(doc_path("recommendations.md"), content.encode('utf-8'))
+            logger.info("Added recommendations.md (reverse_engineering)")
 
 
 def _generate_action_items_md(action_items: list, filename: str) -> str:
@@ -688,6 +1005,7 @@ async def export_video_pdf(video_id: int, db: Session = Depends(get_db)):
     transcript = db.query(Transcript).filter(Transcript.video_id == video_id).first()
     keyframes = db.query(Keyframe).filter(Keyframe.video_id == video_id).order_by(Keyframe.timestamp).all()
     analysis = db.query(Analysis).filter(Analysis.video_id == video_id).first()
+    diagram_sources = _prepare_diagram_sources(analysis)
     
     # Prepare data for PDF
     video_data = _get_video_data(video)
@@ -695,31 +1013,12 @@ async def export_video_pdf(video_id: int, db: Session = Depends(get_db)):
     keyframes_data = _get_keyframes_data(keyframes)
     analysis_data = analysis.output_format if analysis else None
     
-    # Render diagrams for PDF
+    # Render diagrams for PDF (validated or synthesized)
+    diagram_sources = _prepare_diagram_sources(analysis)
     diagrams_data = None
     if analysis:
         diagram_gen = DiagramGenerator()
-        diagrams_data = {}
-        
-        # Render sequence diagram
-        if analysis.sequence_diagram:
-            try:
-                seq_png = diagram_gen.render_mermaid_to_image_sync(analysis.sequence_diagram, "png")
-                if seq_png:
-                    diagrams_data['sequence_diagram_image'] = seq_png
-                    logger.info("Rendered sequence diagram for PDF")
-            except Exception as e:
-                logger.warning(f"Failed to render sequence diagram for PDF: {e}")
-        
-        # Render user flow diagram
-        if analysis.user_flow_diagram:
-            try:
-                flow_png = diagram_gen.render_mermaid_to_image_sync(analysis.user_flow_diagram, "png")
-                if flow_png:
-                    diagrams_data['user_flow_diagram_image'] = flow_png
-                    logger.info("Rendered user flow diagram for PDF")
-            except Exception as e:
-                logger.warning(f"Failed to render user flow diagram for PDF: {e}")
+        diagrams_data = _render_diagram_images(diagram_gen, diagram_sources)
     
     try:
         # Get template type from video record
@@ -793,6 +1092,12 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
     # Create safe video name for files
     safe_name = "".join(c for c in os.path.splitext(video.filename)[0] if c.isalnum() or c in "._- ").rstrip()
     safe_name = safe_name.replace(" ", "_")
+
+    # Determine template/layout
+    template_type = video.analysis_type if hasattr(video, 'analysis_type') else None
+    if template_type == "auto":
+        template_type = "reverse_engineering" if video.media_type == "video" else "notes"
+    paths = _get_export_paths(template_type)
     
     # Create ZIP in memory
     zip_buffer = io.BytesIO()
@@ -802,7 +1107,7 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
             # Download and add each keyframe image
             for idx, kf in enumerate(keyframes, start=1):
                 image_filename = f"{safe_name}_{idx:03d}.jpg"
-                image_path_in_zip = f"images/{image_filename}"
+                image_path_in_zip = _join_export_path(paths["media_images"], image_filename)
                 
                 # Try to download image from MinIO/S3
                 if kf.s3_url:
@@ -842,7 +1147,7 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
                 analysis_data=analysis.output_format if analysis else None
             )
             
-            zip_file.writestr("descriptions.txt", descriptions_content)
+            zip_file.writestr(_join_export_path(paths["data"], "descriptions.txt"), descriptions_content)
             
             # Add transcript.txt as separate file
             if transcript and transcript.full_text:
@@ -853,7 +1158,7 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
 
 {transcript.full_text}
 """
-                zip_file.writestr("transcript.txt", transcript_content.encode('utf-8'))
+                zip_file.writestr(_join_export_path(paths["data"], "transcript.txt"), transcript_content.encode('utf-8'))
                 logger.info("Added transcript.txt to ZIP")
             
             # Add analysis.json for programmatic access
@@ -866,16 +1171,16 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
                     "generated_at": datetime.now().isoformat()
                 }
                 zip_file.writestr(
-                    "analysis.json", 
+                    _join_export_path(paths["data"], "analysis.json"), 
                     json.dumps(analysis_json, indent=2, ensure_ascii=False).encode('utf-8')
                 )
                 logger.info("Added analysis.json to ZIP")
-            
-            # Get template type for styling
-            template_type = video.analysis_type if hasattr(video, 'analysis_type') else None
-            if template_type == "auto":
-                template_type = "reverse_engineering" if video.media_type == "video" else "notes"
-            
+
+            # Prepare diagrams
+            diagrams_sources = _prepare_diagram_sources(analysis)
+            diagram_gen = DiagramGenerator()
+            diagram_images = _render_diagram_images(diagram_gen, diagrams_sources)
+
             # Generate and add PDF with template styling
             try:
                 video_data = _get_video_data(video)
@@ -887,6 +1192,7 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
                     transcript_data=transcript_data,
                     keyframes_data=keyframes_data,
                     analysis_data=analysis.output_format if analysis else None,
+                    diagrams_data=diagram_images if diagram_images else None,
                     template_type=template_type
                 )
                 
@@ -897,39 +1203,41 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
                 logger.warning(f"Failed to generate PDF for ZIP: {e}")
             
             # Add diagrams if available
-            diagram_gen = DiagramGenerator()
-            
             if analysis:
                 # Sequence Diagram
-                if analysis.sequence_diagram:
+                if diagrams_sources.get("sequence_diagram"):
                     zip_file.writestr(
-                        "diagrams/sequence_diagram.mmd", 
-                        analysis.sequence_diagram.encode('utf-8')
+                        _join_export_path(paths["diagrams"], "sequence_diagram.mmd"), 
+                        diagrams_sources["sequence_diagram"].encode('utf-8')
                     )
                     logger.info("Added sequence diagram .mmd to ZIP")
                     
                     # Render to PNG
                     try:
-                        png_data = diagram_gen.render_mermaid_to_image_sync(analysis.sequence_diagram, "png")
+                        png_data = diagram_images.get("sequence_diagram_image") if diagram_images else None
+                        if not png_data:
+                            png_data = diagram_gen.render_mermaid_to_image_sync(diagrams_sources["sequence_diagram"], "png")
                         if png_data:
-                            zip_file.writestr("diagrams/sequence_diagram.png", png_data)
+                            zip_file.writestr(_join_export_path(paths["diagrams"], "sequence_diagram.png"), png_data)
                             logger.info("Added sequence diagram .png to ZIP")
                     except Exception as render_err:
                         logger.warning(f"Failed to render sequence diagram PNG: {render_err}")
                 
                 # User Flow Diagram
-                if analysis.user_flow_diagram:
+                if diagrams_sources.get("user_flow_diagram"):
                     zip_file.writestr(
-                        "diagrams/user_flow_diagram.mmd",
-                        analysis.user_flow_diagram.encode('utf-8')
+                        _join_export_path(paths["diagrams"], "user_flow_diagram.mmd"),
+                        diagrams_sources["user_flow_diagram"].encode('utf-8')
                     )
                     logger.info("Added user flow diagram .mmd to ZIP")
                     
                     # Render to PNG
                     try:
-                        png_data = diagram_gen.render_mermaid_to_image_sync(analysis.user_flow_diagram, "png")
+                        png_data = diagram_images.get("user_flow_diagram_image") if diagram_images else None
+                        if not png_data:
+                            png_data = diagram_gen.render_mermaid_to_image_sync(diagrams_sources["user_flow_diagram"], "png")
                         if png_data:
-                            zip_file.writestr("diagrams/user_flow_diagram.png", png_data)
+                            zip_file.writestr(_join_export_path(paths["diagrams"], "user_flow_diagram.png"), png_data)
                             logger.info("Added user flow diagram .png to ZIP")
                     except Exception as render_err:
                         logger.warning(f"Failed to render user flow diagram PNG: {render_err}")
@@ -955,7 +1263,7 @@ async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
                         wireframes_content.append("")
                     
                     zip_file.writestr(
-                        "diagrams/wireframes.txt",
+                        _join_export_path(paths["diagrams"], "wireframes.txt"),
                         "\n".join(wireframes_content).encode('utf-8')
                     )
                     logger.info(f"Added {len(analysis.wireframes)} wireframes to ZIP")
@@ -985,10 +1293,10 @@ Wireframe ASCII delle schermate principali - rappresentazioni semplificate della
 3. **GitHub**: I file .mmd vengono renderizzati automaticamente nei README
 
 """
-                zip_file.writestr("diagrams/README.md", diagrams_readme.encode('utf-8'))
+                zip_file.writestr(_join_export_path(paths["diagrams"], "README.md"), diagrams_readme.encode('utf-8'))
             
             # Add template-specific export files
-            _add_template_specific_files(zip_file, template_type, analysis, video)
+            _add_template_specific_files(zip_file, template_type, analysis, video, paths)
             
             # Add root README.md based on template type
             root_readme = _generate_readme_for_template(
@@ -1058,13 +1366,8 @@ async def export_video_html(video_id: int, db: Session = Depends(get_db)):
     } if transcript else None
     keyframes_data = _get_keyframes_data(keyframes)
     
-    # Prepare diagrams data
-    diagrams_data = None
-    if analysis:
-        diagrams_data = {
-            "sequence_diagram": analysis.sequence_diagram,
-            "user_flow_diagram": analysis.user_flow_diagram
-        }
+    # Prepare diagrams data (validated or synthesized)
+    diagrams_data = _prepare_diagram_sources(analysis)
     
     try:
         # Generate HTML
@@ -1282,28 +1585,28 @@ async def export_video_markdown(video_id: int, db: Session = Depends(get_db)):
             md_lines.append("")
     
     # Diagrams
-    if analysis and (analysis.sequence_diagram or analysis.user_flow_diagram):
+    if diagram_sources.get("sequence_diagram") or diagram_sources.get("user_flow_diagram"):
         md_lines.extend([
             "## 📊 Diagrammi",
             "",
         ])
         
-        if analysis.sequence_diagram:
+        if diagram_sources.get("sequence_diagram"):
             md_lines.extend([
                 "### Diagramma di Sequenza",
                 "",
                 "```mermaid",
-                analysis.sequence_diagram,
+                diagram_sources["sequence_diagram"],
                 "```",
                 "",
             ])
         
-        if analysis.user_flow_diagram:
+        if diagram_sources.get("user_flow_diagram"):
             md_lines.extend([
                 "### Diagramma Flusso Utente",
                 "",
                 "```mermaid",
-                analysis.user_flow_diagram,
+                diagram_sources["user_flow_diagram"],
                 "```",
                 "",
             ])

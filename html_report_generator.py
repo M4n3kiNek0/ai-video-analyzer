@@ -809,7 +809,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && lightbox
     
     def _build_diagrams_section(self, diagrams_data: Optional[Dict[str, Any]]) -> str:
         """Build diagrams section with Mermaid rendering."""
-        if not diagrams_data:
+        if not diagrams_data or not (diagrams_data.get('sequence_diagram') or diagrams_data.get('user_flow_diagram')):
             return '<p>Nessun diagramma disponibile.</p>'
         
         html = '<h2 class="section-title">📊 Diagrammi</h2>'

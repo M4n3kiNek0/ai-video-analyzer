@@ -72,7 +72,7 @@ EXPORT_TEMPLATES: Dict[str, Dict[str, Any]] = {
             "tech_stack.md",
             "README.md"
         ],
-        "export_folders": ["diagrams", "images"],
+        "export_folders": ["diagrams", "media/images", "docs", "data"],
         "readme_template": "reverse_engineering",
         "suitable_for": ["video"],
         "pdf_subtitle": "Report di Reverse Engineering",

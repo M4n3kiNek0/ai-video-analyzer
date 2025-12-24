@@ -61,7 +61,7 @@ class DescriptionParser:
             Dictionary with parsed fields
         """
         if not raw_description:
-            return {"summary": "Descrizione non disponibile"}
+            return {"summary": "Nessuna descrizione AI disponibile per questo frame", "parse_error": True}
         
         # Try to extract and clean JSON
         cleaned = DescriptionParser.extract_json_from_text(raw_description)
@@ -262,9 +262,14 @@ class DescriptionParser:
         
         # Summary/Description
         summary = parsed.get("summary", "Descrizione non disponibile")
+        if (not summary or summary == "Descrizione non disponibile") and not raw_description:
+            summary = f"Nessuna descrizione AI disponibile per il frame {index} ({time_str}). Usa transcript o screenshot per contesto."
         lines.append("DESCRIZIONE:")
         lines.append(summary)
         lines.append("")
+        if parsed.get("parse_error") and raw_description:
+            lines.append("_Nota: descrizione originale non strutturata; è stata usata una versione semplificata._")
+            lines.append("")
         
         # Audio correlation
         audio_corr = parsed.get("audio_correlation", "")
