@@ -335,13 +335,18 @@ class DescriptionParser:
         
         # Layout info (if meaningful)
         layout = parsed.get("layout", {})
+        if not isinstance(layout, dict):
+            layout = {}
         layout_parts = []
-        if layout.get("header"):
-            layout_parts.append(f"Header: {layout['header'][:50]}")
-        if layout.get("navigation"):
-            layout_parts.append(f"Nav: {layout['navigation'][:50]}")
-        if layout.get("main_content"):
-            layout_parts.append(f"Content: {layout['main_content'][:50]}")
+        header_val = layout.get("header", "")
+        if header_val and isinstance(header_val, str):
+            layout_parts.append(f"Header: {header_val[:50]}")
+        nav_val = layout.get("navigation", "")
+        if nav_val and isinstance(nav_val, str):
+            layout_parts.append(f"Nav: {nav_val[:50]}")
+        content_val = layout.get("main_content", "")
+        if content_val and isinstance(content_val, str):
+            layout_parts.append(f"Content: {content_val[:50]}")
         
         if layout_parts:
             lines.append("LAYOUT:")
