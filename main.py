@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
 
 # Import local modules
 from models import init_db
@@ -173,11 +174,21 @@ async def api_info():
 @app.get("/health")
 async def health_check():
     """Detailed health check."""
+    db_ok = False
+    try:
+        from models import SessionLocal
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+            db_ok = True
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+        db_ok = False
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if db_ok else "degraded",
         "components": {
             "ffmpeg": check_ffmpeg_installed(),
-            "database": True,  # Would check connection in production
+            "database": db_ok,
             "analyzer": _analyzer is not None
         }
     }

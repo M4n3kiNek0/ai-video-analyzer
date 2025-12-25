@@ -1,0 +1,12 @@
+# Project Intelligence (.cursorrules)
+
+- Respect Celery-based pipelines: heavy processing must stay async in `processing_pipeline.py`; FastAPI routes should enqueue, not block.
+- Use MinIOStorage for any asset uploads; keep S3 paths under `videos/{id}/...`.
+- Analysis providers are pluggable via `ai_providers`; default to env OPENAI when DB config missing.
+- Frontend expects `/videos` API to return `{ videos: [...] }` or array; keep response backward-compatible.
+- Logs endpoint used by ProgressTerminal; avoid breaking structure `[{id,timestamp,level,message}]`.
+- Keep diagram generation lightweight; guard against missing data and timeouts.
+- Memory bank required each session; update `activeContext.md` and `progress.md` after significant changes.
+- `useDebounce` hook lives in `frontend/lib/hooks.ts` (client component); `cn()` utility in `frontend/lib/utils.ts` (server-safe).
+- SSE endpoint at `/videos/{id}/logs/stream`; ProgressTerminal falls back to polling if SSE fails.
+- Health endpoint performs real DB check via `SELECT 1`.

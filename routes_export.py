@@ -21,6 +21,7 @@ from html_report_generator import generate_html_report
 from diagram_generator import DiagramGenerator
 from description_parser import DescriptionParser
 from export_templates import EXPORT_TEMPLATES, get_template
+from security import require_api_key
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -908,6 +909,24 @@ def _generate_key_points_md(key_points: list, filename: str) -> str:
     return "\n".join(lines)
 
 
+def _generate_wireframes_md(wireframes: list) -> str:
+    """Generate ASCII wireframes section."""
+    lines = ["## Wireframes (ASCII)", ""]
+    if not wireframes:
+        lines.append("_Nessun wireframe disponibile_")
+        return "\n".join(lines)
+    for idx, wf in enumerate(wireframes, 1):
+        ts = wf.get("timestamp", 0)
+        mins = int(ts // 60)
+        secs = int(ts % 60)
+        lines.append(f"### Wireframe {idx} – {mins}:{secs:02d}")
+        lines.append("```")
+        lines.append(wf.get("wireframe", ""))
+        lines.append("```")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def _generate_data_model_md(data_model: dict, filename: str) -> str:
     """Generate data model markdown file."""
     lines = [f"# Modello Dati Inferito - {filename}", ""]
@@ -978,7 +997,7 @@ def _generate_tech_stack_md(tech_stack: dict, filename: str) -> str:
 
 
 @router.get("/{video_id}/export/pdf")
-async def export_video_pdf(video_id: int, db: Session = Depends(get_db)):
+async def export_video_pdf(video_id: int, db: Session = Depends(get_db), authorized: bool = Depends(require_api_key)):
     """
     Export video analysis as a PDF report.
     
@@ -1057,7 +1076,7 @@ async def export_video_pdf(video_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{video_id}/export/zip")
-async def export_video_zip(video_id: int, db: Session = Depends(get_db)):
+async def export_video_zip(video_id: int, db: Session = Depends(get_db), authorized: bool = Depends(require_api_key)):
     """
     Export video analysis as a ZIP containing:
     - All keyframe images renamed as {video_title}_{number}.jpg
@@ -1328,7 +1347,7 @@ Wireframe ASCII delle schermate principali - rappresentazioni semplificate della
 
 
 @router.get("/{video_id}/export/html")
-async def export_video_html(video_id: int, db: Session = Depends(get_db)):
+async def export_video_html(video_id: int, db: Session = Depends(get_db), authorized: bool = Depends(require_api_key)):
     """
     Export video analysis as an interactive HTML report.
     
@@ -1399,7 +1418,7 @@ async def export_video_html(video_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{video_id}/export/markdown")
-async def export_video_markdown(video_id: int, db: Session = Depends(get_db)):
+async def export_video_markdown(video_id: int, db: Session = Depends(get_db), authorized: bool = Depends(require_api_key)):
     """
     Export video analysis as a Markdown document.
     
@@ -1610,6 +1629,11 @@ async def export_video_markdown(video_id: int, db: Session = Depends(get_db)):
                 "```",
                 "",
             ])
+
+    # Wireframes (ASCII)
+    if analysis and analysis.wireframes:
+        md_lines.append(_generate_wireframes_md(analysis.wireframes))
+        md_lines.append("")
     
     # Footer
     md_lines.extend([

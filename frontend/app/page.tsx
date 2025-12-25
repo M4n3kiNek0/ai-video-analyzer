@@ -7,19 +7,28 @@ import { Plus, Search, Filter } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Video } from "@/types";
+import { useDebounce } from "@/lib/hooks";
 
 export default function DashboardPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const debouncedSearch = useDebounce(search, 400);
 
-  const fetchVideos = async () => {
+  const fetchVideos = async (query?: string, status?: string) => {
     try {
       setLoading(true);
       console.log('[Dashboard] Fetching videos from API...');
       console.log('[Dashboard] API base URL:', api.defaults.baseURL);
       
-      const response = await api.get('/videos');
+      const response = await api.get('/videos', {
+        params: {
+          ...(query ? { q: query } : {}),
+          ...(status ? { status } : {}),
+        },
+      });
       console.log('[Dashboard] API Response:', response.data);
       
       const data = response.data;
@@ -39,15 +48,15 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchVideos();
+    fetchVideos(debouncedSearch, statusFilter);
 
     // Poll for updates every 10 seconds if there are processing videos
     const interval = setInterval(() => {
-      fetchVideos();
+      fetchVideos(debouncedSearch, statusFilter);
     }, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [debouncedSearch, statusFilter]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this video?")) return;
@@ -99,13 +108,26 @@ export default function DashboardPage() {
             type="text"
             placeholder="Search videos..."
             className="w-full bg-transparent border-none text-sm text-white placeholder:text-zinc-500 focus:outline-none pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="h-6 w-px bg-white/10" />
-        <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-          <Filter className="w-4 h-4 mr-2" />
-          Filter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-zinc-500" />
+          <select
+            className="bg-transparent border border-white/10 rounded-md text-sm text-white px-2 py-1 focus:outline-none"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="uploading">Uploading</option>
+            <option value="processing">Processing</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
       </div>
 
       {/* Content */}

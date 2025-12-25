@@ -16,6 +16,7 @@ from schemas import UploadResponse, AudioUploadResponse, OptimizePromptRequest, 
 from audio_processor import SUPPORTED_AUDIO_FORMATS
 # Import Celery tasks
 from processing_pipeline import process_video_task, process_audio_task
+from security import require_api_key
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ def set_analyzer(analyzer):
 
 
 @router.post("/optimize-prompt", response_model=OptimizePromptResponse)
-async def optimize_prompt(request: OptimizePromptRequest):
+async def optimize_prompt(request: OptimizePromptRequest, authorized: bool = Depends(require_api_key)):
     """
     Ottimizza la descrizione fornita dall'utente per migliorare la qualità dell'analisi.
     Usa AI per suggerire una versione migliorata del prompt mantenendo il significato originale.
@@ -63,7 +64,8 @@ async def upload_video(
     file: UploadFile = File(...),
     context: Optional[str] = Form(None),
     analysis_type: Optional[str] = Form("auto"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(require_api_key)
 ):
     """
     Upload a video file and start async processing.
@@ -178,7 +180,8 @@ async def upload_audio(
     file: UploadFile = File(...),
     context: Optional[str] = Form(None),
     analysis_type: Optional[str] = Form("auto"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(require_api_key)
 ):
     """
     Upload an audio file and start async processing.

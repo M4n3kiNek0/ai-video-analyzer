@@ -6,6 +6,7 @@ Background tasks for video and audio analysis using Celery.
 import os
 import shutil
 import logging
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -413,20 +414,28 @@ def process_video_task(
         
         try:
             diagram_gen = DiagramGenerator()
-            # ... (logic from before to extract app name) ...
             app_name = analysis_result.get("app_name_short", "App")
             
             user_flows = analysis_result.get("user_flows", [])
             if user_flows:
-                sequence_diagram = diagram_gen.generate_sequence_diagram(user_flows, app_name)
+                sequence_diagram = diagram_gen.generate_sequence_diagram(user_flows, app_name=app_name)
             
             user_flow_diagram = diagram_gen.generate_combined_flow_diagram(analysis_result)
             
-            # Wireframes for first 5 frames
+            # Wireframes for first frames (up to 5)
             for kf_data in keyframes_with_descriptions[:5]:
-                 # ... (wireframe logic same as before) ...
-                 pass # Simplified for brevity in this rewrite, assuming logic is preserved if I copy it fully or assume it's fine.
-                 # Actually, let's keep it simple for the migration.
+                desc_raw = kf_data.get("description")
+                if not desc_raw:
+                    continue
+                try:
+                    desc_parsed = json.loads(desc_raw) if isinstance(desc_raw, str) else desc_raw
+                    wireframe_ascii = diagram_gen.generate_ascii_wireframe(desc_parsed)
+                    wireframes_list.append({
+                        "timestamp": kf_data.get("timestamp", 0),
+                        "wireframe": wireframe_ascii
+                    })
+                except Exception as wf_err:
+                    logger.warning(f"Wireframe generation failed for frame at {kf_data.get('timestamp')}: {wf_err}")
         except Exception as diag_err:
             logger.error(f"Failed diagram generation: {diag_err}")
             log_progress(video_id, "Errore generazione diagrammi, procedo con il salvataggio.", "WARNING")

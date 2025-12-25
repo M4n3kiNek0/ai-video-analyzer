@@ -4,16 +4,19 @@ Videos Routes - Video listing, detail, and deletion endpoints.
 
 import logging
 import os
+import asyncio
+import json
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from models import Video, Transcript, Keyframe, Analysis, ProcessingLog, get_db
 
 # Import Celery tasks for retry functionality
 from processing_pipeline import process_video_task, process_audio_task
+from security import require_api_key
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -115,6 +118,7 @@ async def get_video_logs(video_id: int, db: Session = Depends(get_db)):
 @router.get("")
 async def list_videos(
     status: Optional[str] = None,
+    q: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db)
@@ -131,6 +135,12 @@ async def list_videos(
     
     if status:
         query = query.filter(Video.status == status)
+    if q:
+        like_pattern = f"%{q}%"
+        query = query.filter(
+            (Video.filename.ilike(like_pattern)) |
+            (Video.context.ilike(like_pattern))
+        )
     
     total = query.count()
     videos = query.order_by(Video.created_at.desc()).offset(offset).limit(limit).all()
@@ -173,6 +183,58 @@ async def list_videos(
         "offset": offset,
         "videos": videos_data
     })
+
+
+@router.get("/{video_id}/logs/stream")
+async def stream_video_logs(video_id: int, authorized: bool = Depends(require_api_key)):
+    """
+    Server-Sent Events stream for processing logs.
+    Falls back to closing when video is completed/failed and no new logs arrive.
+    """
+    async def event_generator():
+        last_id = 0
+        heartbeat = 0
+        # Use dedicated session inside generator
+        from models import SessionLocal
+        while True:
+            await asyncio.sleep(1)
+            with SessionLocal() as db:
+                logger.info(f"[SSE] Fetching logs for video {video_id} since id {last_id}")
+                logs = db.query(ProcessingLog).filter(
+                    ProcessingLog.video_id == video_id,
+                    ProcessingLog.id > last_id
+                ).order_by(ProcessingLog.id).all()
+                
+                if logs:
+                    last_id = logs[-1].id
+                    payload = [
+                        {
+                            "id": log.id,
+                            "timestamp": log.timestamp.isoformat(),
+                            "level": log.level,
+                            "message": log.message
+                        } for log in logs
+                    ]
+                    yield f"data: {json.dumps(payload)}\n\n"
+                
+                # Heartbeat every ~15s to keep connections alive
+                heartbeat += 1
+                if heartbeat >= 15:
+                    heartbeat = 0
+                    yield "event: ping\ndata: keepalive\n\n"
+                
+                # Stop streaming if processing finished
+                video = db.query(Video).filter(Video.id == video_id).first()
+                if video and video.status not in ["processing", "uploading"]:
+                    logger.info(f"[SSE] Closing stream for video {video_id} (status={video.status})")
+                    # Send final ping to flush any buffered events then close
+                    yield "event: end\ndata: done\n\n"
+                    break
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+    }
+    return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)
 
 
 @router.delete("/{video_id}")

@@ -21,11 +21,14 @@ interface ProgressTerminalProps {
 export function ProgressTerminal({ videoId, status }: ProgressTerminalProps) {
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [polling, setPolling] = useState(false);
+    const [usingSSE, setUsingSSE] = useState(false);
+    const [retryDelay, setRetryDelay] = useState(2000);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // Poll for logs
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: NodeJS.Timeout | undefined;
+        let es: EventSource | undefined;
 
         const fetchLogs = async () => {
             try {
@@ -36,19 +39,59 @@ export function ProgressTerminal({ videoId, status }: ProgressTerminalProps) {
             }
         };
 
-        // Fetch immediately
+        const startPolling = () => {
+            setPolling(true);
+            interval = setInterval(fetchLogs, 2000);
+        };
+
+        const startSSE = () => {
+            try {
+                const base = api.defaults.baseURL || window.location.origin;
+                es = new EventSource(`${base}/videos/${videoId}/logs/stream`);
+                setUsingSSE(true);
+                setRetryDelay(2000);
+                es.onmessage = (event) => {
+                    try {
+                        const data: LogEntry[] = JSON.parse(event.data);
+                        setLogs((prev) => {
+                            const existing = new Map(prev.map(l => [l.id, l]));
+                            data.forEach(item => existing.set(item.id, item));
+                            return Array.from(existing.values()).sort((a, b) => a.id - b.id);
+                        });
+                    } catch (e) {
+                        console.error("Failed to parse SSE log payload", e);
+                    }
+                };
+                es.addEventListener("end", () => {
+                    es?.close();
+                    setUsingSSE(false);
+                });
+                es.onerror = () => {
+                    es?.close();
+                    setUsingSSE(false);
+                    // Exponential backoff up to 30s
+                    const next = Math.min(retryDelay * 2, 30000);
+                    setRetryDelay(next);
+                    setTimeout(() => startSSE(), next);
+                };
+            } catch (err) {
+                console.error("SSE connection failed, falling back to polling", err);
+                startPolling();
+            }
+        };
+
+        // Initial fetch
         fetchLogs();
 
-        // Start polling if processing
         if (status === 'processing' || status === 'uploading') {
-            setPolling(true);
-            interval = setInterval(fetchLogs, 2000); // 2s polling
+            startSSE();
         } else {
             setPolling(false);
         }
 
         return () => {
             if (interval) clearInterval(interval);
+            if (es) es.close();
         };
     }, [videoId, status]);
 
@@ -70,6 +113,12 @@ export function ProgressTerminal({ videoId, status }: ProgressTerminalProps) {
                         <span className="flex h-2 w-2 relative">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                    )}
+                    {!polling && usingSSE && (
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                         </span>
                     )}
                     <span className={cn(
